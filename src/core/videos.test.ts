@@ -13,6 +13,10 @@ describe('videos utilities', () => {
         sizeBytes: 1000000,
         creationTime: new Date('2024-01-15'),
         videoSignature: 'h264_1920x1080',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        hasAudio: true,
         included: true,
       },
       {
@@ -23,6 +27,10 @@ describe('videos utilities', () => {
         sizeBytes: 800000,
         creationTime: new Date('2024-01-10'),
         videoSignature: 'h264_1920x1080',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        hasAudio: true,
         included: true,
       },
       {
@@ -33,6 +41,10 @@ describe('videos utilities', () => {
         sizeBytes: 1200000,
         creationTime: new Date('2024-01-12'),
         videoSignature: 'h264_1920x1080',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        hasAudio: true,
         included: true,
       },
     ];
@@ -93,6 +105,10 @@ describe('videos utilities', () => {
       sizeBytes: 1000000,
       creationTime: new Date(),
       videoSignature: 'h264_1920x1080',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      hasAudio: true,
       included: true,
     };
 

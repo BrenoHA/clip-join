@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import path from "node:path";
-import type { Clip } from "../../core/types.js";
+import type { Clip, Transition } from "../../core/types.js";
 import { humanClock } from "../../core/format.js";
 import { resolveOutputPath } from "../../core/output.js";
+import { TRANSITIONS } from "../../config.js";
 import { theme } from "../theme.js";
 import { PreviewPanel } from "../components/PreviewPanel.js";
 import { KeyHints } from "../components/KeyHints.js";
@@ -13,6 +14,8 @@ interface Props {
   setClips: (clips: Clip[]) => void;
   outputName: string;
   setOutputName: (name: string) => void;
+  transition: Transition;
+  setTransition: (t: Transition) => void;
   onJoin: () => void;
   onBack: () => void;
   onQuit: () => void;
@@ -25,6 +28,8 @@ export function EditScreen({
   setClips,
   outputName,
   setOutputName,
+  transition,
+  setTransition,
   onJoin,
   onBack,
   onQuit,
@@ -59,6 +64,9 @@ export function EditScreen({
     } else if (input === "o") {
       setDraftOutput(outputName);
       setEditingOutput(true);
+    } else if (input === "t") {
+      const idx = TRANSITIONS.findIndex((t) => t.id === transition);
+      setTransition(TRANSITIONS[(idx + 1) % TRANSITIONS.length].id);
     } else if (input === "j") {
       // j = Join. (Enter toggles the clip; it never starts the join.)
       if (clips.some((c) => c.included)) onJoin();
@@ -66,6 +74,7 @@ export function EditScreen({
   });
 
   const included = clips.filter((c) => c.included);
+  const transitionLabel = TRANSITIONS.find((t) => t.id === transition)?.label ?? "None";
 
   const start = Math.max(
     0,
@@ -100,6 +109,7 @@ export function EditScreen({
         <PreviewPanel
           clips={clips}
           outputPath={resolveOutputPath(outputName)}
+          transition={transition}
           editingValue={editingOutput ? draftOutput : null}
           onChangeEditing={setDraftOutput}
           onSubmitEditing={(val) => {
@@ -117,6 +127,7 @@ export function EditScreen({
             { keys: "space/enter", label: "toggle" },
             { keys: "Shift+↑↓", label: "reorder" },
             { keys: "o", label: "rename output" },
+            { keys: "t", label: `transition: ${transitionLabel}` },
           ],
           [
             { keys: "j", label: `▶ JOIN${included.length === 0 ? " (select a clip first)" : ""}`, primary: true },

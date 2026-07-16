@@ -7,7 +7,7 @@ import { checkDeps, probeClips, type DepStatus } from "../core/probe.js";
 import { findVideos, sortClips } from "../core/videos.js";
 import { runJoin } from "../core/join.js";
 import { resolveOutputPath } from "../core/output.js";
-import type { Clip, JoinMode, JoinResult } from "../core/types.js";
+import type { Clip, JoinMode, JoinResult, Transition } from "../core/types.js";
 import { useFullscreen } from "./hooks/useFullscreen.js";
 import { theme } from "./theme.js";
 import { Header } from "./components/Header.js";
@@ -41,6 +41,7 @@ export function App({ initialFolder }: Props) {
   const [splashDone, setSplashDone] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
   const [outputName, setOutputName] = useState(defaultOutputName);
+  const [transition, setTransition] = useState<Transition>("none");
   const [probeDone, setProbeDone] = useState(0);
   const [probeTotal, setProbeTotal] = useState(0);
   const [progress, setProgress] = useState<{ fraction: number; mode: JoinMode }>({
@@ -84,6 +85,7 @@ export function App({ initialFolder }: Props) {
     const probed = await probeClips(files, (done) => setProbeDone(done));
     setClips(sortClips(probed, "date"));
     setOutputName(defaultOutputName()); // fresh timestamped name per session
+    setTransition("none");
     setPhase("edit");
   }
 
@@ -94,6 +96,7 @@ export function App({ initialFolder }: Props) {
       const res = await runJoin({
         clips,
         output: resolveOutputPath(outputName),
+        transition,
         onProgress: (p) => {
           // Throttle repaints to ~15/s to keep the bar smooth without flicker.
           const now = Date.now();
@@ -165,6 +168,8 @@ export function App({ initialFolder }: Props) {
           setClips={setClips}
           outputName={outputName}
           setOutputName={setOutputName}
+          transition={transition}
+          setTransition={setTransition}
           onJoin={() => void startJoin()}
           onBack={() => setPhase("browse")}
           onQuit={exit}

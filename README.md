@@ -26,6 +26,9 @@ flags, no config, just a clean keyboard-driven flow from folder to finished file
    quality and works when clips share a codec/resolution. If that fails (e.g. mixed formats
    or codecs) it **re-encodes** automatically (H.264/AAC, slower but always works).
 
+Optionally, add a **crossfade transition** between clips (press `t` on the arrange screen).
+It's off by default; enabling it re-encodes the output (transitions can't be done losslessly).
+
 Every joined file is written to the **`output/`** folder with a timestamped default
 name (`joined_output_YYYY-MM-DD_HHMMSS.mp4`), so repeated joins never overwrite one another.
 
@@ -75,6 +78,7 @@ total duration, size, and whether the join will be lossless):
 | `space` / `Enter` | Toggle a clip in/out of the join              |
 | `Shift+↑ ↓`       | Reorder the selected clip                     |
 | `o`               | Rename the output file (saved into `output/`) |
+| `t`               | Toggle the transition (None / Crossfade)      |
 | `j`               | **▶ Start the join**                          |
 | `esc`             | Back to the browser                           |
 | `r`               | Join again (summary screen)                   |
@@ -117,8 +121,6 @@ codec detection, and join logic. See `src/core/*.test.ts` for examples.
 
 ## Roadmap
 
-- Transitions between clips (crossfade/dissolve via ffmpeg `xfade`/`acrossfade`), opt-in
-  since they require re-encoding.
 - Per-clip trimming (in/out points).
 - Audio normalization.
 

@@ -1,6 +1,20 @@
 import path from "node:path";
+import type { Transition } from "./core/types.js";
 
 export const DEFAULT_EXTS = ["mp4", "mov", "m4v", "avi", "mkv"];
+
+/**
+ * Overlap length for a transition, in seconds. ffmpeg's own xfade default is
+ * 1.0s; we go shorter for a subtler blend. Auto-clamped down when a clip is
+ * shorter than this (see core/join.ts).
+ */
+export const TRANSITION_DURATION_SEC = 0.5;
+
+/** The transitions offered in the UI, in cycle order, with their xfade names. */
+export const TRANSITIONS: { id: Transition; label: string; xfade?: string }[] = [
+  { id: "none", label: "None" },
+  { id: "crossfade", label: "Crossfade", xfade: "fade" },
+];
 
 /** Every joined video is written here, relative to where ClipJoin is launched. */
 export const OUTPUT_DIR = path.resolve(process.cwd(), "output");

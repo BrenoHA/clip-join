@@ -52,10 +52,28 @@ function getDuration(probe: any): number {
   return Number.isFinite(d) ? d : 0;
 }
 
+function videoStream(probe: any): any {
+  return (probe?.streams ?? []).find((s: any) => s.codec_type === "video");
+}
+
 function videoSignature(probe: any): string {
-  const v = (probe?.streams ?? []).find((s: any) => s.codec_type === "video");
+  const v = videoStream(probe);
   if (!v) return "unknown";
   return `${v.codec_name ?? "?"} ${v.width ?? "?"}x${v.height ?? "?"}`;
+}
+
+/** Parse ffprobe's "num/den" (or plain number) r_frame_rate into fps. */
+function parseFps(raw: unknown): number {
+  if (typeof raw !== "string") return 0;
+  const [num, den] = raw.split("/");
+  const n = Number(num);
+  const d = den === undefined ? 1 : Number(den);
+  if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return 0;
+  return n / d;
+}
+
+function hasAudioStream(probe: any): boolean {
+  return (probe?.streams ?? []).some((s: any) => s.codec_type === "audio");
 }
 
 export async function probeClips(
@@ -67,6 +85,7 @@ export async function probeClips(
   for (const file of files) {
     const abs = path.resolve(file);
     const [probe, stat] = await Promise.all([ffprobeJson(abs), fs.stat(abs)]);
+    const v = videoStream(probe);
     clips.push({
       id: abs,
       path: abs,
@@ -75,6 +94,10 @@ export async function probeClips(
       sizeBytes: stat.size,
       creationTime: await getCreationTime(abs, probe),
       videoSignature: videoSignature(probe),
+      width: Number(v?.width) || 0,
+      height: Number(v?.height) || 0,
+      fps: parseFps(v?.r_frame_rate),
+      hasAudio: hasAudioStream(probe),
       included: true,
     });
     onProgress?.(++done, files.length);

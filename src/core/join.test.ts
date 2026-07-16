@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import type { Clip, JoinMode, JoinResult } from './types.js';
+import { buildTransitionArgs, resolveTransitionDuration } from './join.js';
+import { TRANSITION_DURATION_SEC } from '../config.js';
+
+function makeClip(over: Partial<Clip> = {}): Clip {
+  return {
+    id: over.path ?? '/videos/clip.mp4',
+    path: '/videos/clip.mp4',
+    name: 'clip.mp4',
+    durationSec: 10,
+    sizeBytes: 1000000,
+    creationTime: new Date(),
+    videoSignature: 'h264 1920x1080',
+    width: 1920,
+    height: 1080,
+    fps: 30,
+    hasAudio: true,
+    included: true,
+    ...over,
+  };
+}
 
 describe('join utilities', () => {
   describe('buildConcatFile logic', () => {
@@ -41,6 +61,10 @@ describe('join utilities', () => {
       sizeBytes: 1000000,
       creationTime: new Date(),
       videoSignature: 'h264_1920x1080',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      hasAudio: true,
       included: true,
     };
 
@@ -132,6 +156,96 @@ describe('join utilities', () => {
 
     it('should have non-negative elapsedMs', () => {
       expect(mockResult.elapsedMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('resolveTransitionDuration', () => {
+    it('uses the configured default when clips are long enough', () => {
+      const clips = [makeClip({ durationSec: 10 }), makeClip({ durationSec: 8 })];
+      expect(resolveTransitionDuration(clips)).toBe(TRANSITION_DURATION_SEC);
+    });
+
+    it('clamps below the shortest clip', () => {
+      const clips = [makeClip({ durationSec: 10 }), makeClip({ durationSec: 0.3 })];
+      const d = resolveTransitionDuration(clips);
+      expect(d).toBeLessThan(0.3);
+      expect(d).toBeGreaterThanOrEqual(0.1);
+    });
+  });
+
+  describe('buildTransitionArgs', () => {
+    const enc = { crf: 18, preset: 'veryfast' };
+
+    it('passes each clip as its own -i input', () => {
+      const clips = [
+        makeClip({ path: '/v/a.mp4' }),
+        makeClip({ path: '/v/b.mp4' }),
+        makeClip({ path: '/v/c.mp4' }),
+      ];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      expect(args.filter((a) => a === '-i')).toHaveLength(3);
+      expect(args).toContain('/v/a.mp4');
+      expect(args).toContain('/v/c.mp4');
+    });
+
+    it('maps the requested transition to its xfade name', () => {
+      const clips = [makeClip(), makeClip()];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      const graph = args[args.indexOf('-filter_complex') + 1];
+      expect(graph).toContain('transition=fade');
+    });
+
+    it('forces yuv420p so the output plays in QuickTime', () => {
+      const clips = [makeClip(), makeClip()];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      const i = args.indexOf('-pix_fmt');
+      expect(i).toBeGreaterThan(-1);
+      expect(args[i + 1]).toBe('yuv420p');
+    });
+
+    it('builds one xfade per boundary (n-1 for n clips)', () => {
+      const clips = [makeClip(), makeClip(), makeClip(), makeClip()];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      const graph = args[args.indexOf('-filter_complex') + 1];
+      const count = (graph.match(/xfade=/g) ?? []).length;
+      expect(count).toBe(3);
+    });
+
+    it('computes xfade offsets as sum(dur before k) - k*d', () => {
+      const clips = [
+        makeClip({ durationSec: 10 }),
+        makeClip({ durationSec: 6 }),
+        makeClip({ durationSec: 4 }),
+      ];
+      const d = 0.5;
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', d, enc);
+      const graph = args[args.indexOf('-filter_complex') + 1];
+      // boundary 1: 10 - 1*0.5 = 9.500 ; boundary 2: 16 - 2*0.5 = 15.000
+      expect(graph).toContain('offset=9.500');
+      expect(graph).toContain('offset=15.000');
+    });
+
+    it('subtracts the overlap from the reported total duration', () => {
+      const clips = [makeClip({ durationSec: 10 }), makeClip({ durationSec: 10 })];
+      const { totalDuration } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      expect(totalDuration).toBe(19.5); // 20 - (2-1)*0.5
+    });
+
+    it('skips the audio graph and mapping when a clip has no audio', () => {
+      const clips = [makeClip({ hasAudio: true }), makeClip({ hasAudio: false })];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      const graph = args[args.indexOf('-filter_complex') + 1];
+      expect(graph).not.toContain('acrossfade');
+      expect(args).not.toContain('[aout]');
+      expect(args).toContain('[vout]');
+    });
+
+    it('includes audio crossfade + mapping when all clips have audio', () => {
+      const clips = [makeClip(), makeClip()];
+      const { args } = buildTransitionArgs(clips, '/out.mp4', 'crossfade', 0.5, enc);
+      const graph = args[args.indexOf('-filter_complex') + 1];
+      expect(graph).toContain('acrossfade=d=0.5');
+      expect(args).toContain('[aout]');
     });
   });
 });
