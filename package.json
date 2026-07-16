@@ -3,6 +3,18 @@
   "version": "1.0.0",
   "description": "ClipJoin — an interactive terminal UI for joining videos into one file.",
   "type": "module",
+  "license": "MIT",
+  "author": "BrenoHA",
+  "packageManager": "pnpm@11.13.1",
+  "keywords": [
+    "video",
+    "ffmpeg",
+    "cli",
+    "tui",
+    "ink",
+    "concat",
+    "join"
+  ],
   "bin": {
     "clip-join": "dist/index.js"
   },
