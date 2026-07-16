@@ -1,46 +1,29 @@
-# ClipJoin
+# ClipJoin 🎬
 
-An interactive terminal app for joining videos into one file. Browse to your
-clips, pick which ones to include, reorder them, and merge — **losslessly when
-possible**, so 40×1GB clips join in seconds, not hours.
+**Merge your videos into one file: fast, lossless, and right from your terminal.**
 
-Built with [Ink](https://github.com/vadimdemedes/ink) (React for the terminal),
-the same UI framework behind Claude Code.
+> _Back from a trip with a memory card full of GoPro clips? Select them, stitch them into
+> one file, and upload the whole adventure to YouTube in one shot, public or unlisted,
+> your call._
 
-A "clips merging" animation plays on launch, then the wordmark stays pinned as a
-warm header above every screen:
+Run ClipJoin, pick the files you want, reorder them, and hit join. Simple as that.
 
-```
-█████ ██   ██ █████    ██ █████ ██ ██  ██
-██    ██   ██ ██ ██    ██ ██ ██ ██ ███ ██
-██    ██   ██ █████ ██ ██ ██ ██ ██ ██ ███
-█████ ████ ██ ██    ████  █████ ██ ██  ██
- · arrange your clips
+![Browsing to your clips](docs/screenshots/browse.png)
 
- ╭─────────────────────────────────────────╮ ╭───────────────────────╮
- │ Clips (3)                                │ │ Preview               │
- │ ▸  1. [x] GX010830.MP4        00:22      │ │ 3/3 clips             │
- │    2. [x] GX010831.MP4        00:10      │ │ ⏱ 00:00:54            │
- │    3. [x] GX010832.MP4        00:21      │ │ 💾 394.1MB            │
- │                                          │ │ Output → output/      │
- │                                          │ │ joined_output_…mp4    │
- │                                          │ │ ✓ lossless (fast)     │
- ╰─────────────────────────────────────────╯ ╰───────────────────────╯
-
- ↑↓ move · space/enter toggle · Shift+↑↓ reorder · o rename output
- j ▶ JOIN · esc back · q quit
-```
+Matching clips merge **losslessly in seconds**, with no re-encoding and no quality loss
+(40×1GB in seconds, not hours). Different formats? ClipJoin re-encodes them for you. No
+flags, no config, just a clean keyboard-driven flow from folder to finished file.
 
 ## How it works
 
 1. A short **clips-merging animation** plays on launch while ClipJoin checks for ffmpeg.
 2. **Browse** the filesystem to a folder of clips (or select individual files).
 3. Each clip's embedded `creation_time` (falling back to file mtime) sets the true
-   capture order — you can then reorder by hand.
+   capture order, which you can then reorder by hand.
 4. **Toggle** clips in/out and rename the output, watching the live preview (clip
    count, total duration, size, lossless-vs-re-encode).
-5. On join, ClipJoin tries a **lossless concat** (`ffmpeg -c copy`) first — no quality
-   loss, works when clips share a codec/resolution. If that fails (e.g. mixed formats
+5. On join, ClipJoin first tries a **lossless concat** (`ffmpeg -c copy`), which keeps full
+   quality and works when clips share a codec/resolution. If that fails (e.g. mixed formats
    or codecs) it **re-encodes** automatically (H.264/AAC, slower but always works).
 
 Every joined file is written to the **`output/`** folder with a timestamped default
@@ -71,36 +54,45 @@ Everything is keyboard-driven.
 
 **Browsing**
 
-| Key | Action |
-|---|---|
-| `↑ ↓` | Move the cursor |
-| `space` / `Enter` | Open a directory, or select/deselect a video file |
+| Key                          | Action                                               |
+| ---------------------------- | ---------------------------------------------------- |
+| `↑ ↓`                        | Move the cursor                                      |
+| `space` / `Enter`            | Open a directory, or select/deselect a video file    |
 | `←` / `Backspace` / `Delete` | Up a directory (cursor lands on the folder you left) |
-| `~` | Jump to your home directory |
-| `s` | Use every video in the current folder |
-| `c` | Continue with the files you've selected |
-| `q` | Quit |
+| `~`                          | Jump to your home directory                          |
+| `s`                          | Use every video in the current folder                |
+| `c`                          | Continue with the files you've selected              |
+| `q`                          | Quit                                                 |
 
 **Arranging & joining**
 
-| Key | Action |
-|---|---|
-| `↑ ↓` | Move the cursor |
-| `space` / `Enter` | Toggle a clip in/out of the join |
-| `Shift+↑ ↓` | Reorder the selected clip |
-| `o` | Rename the output file (saved into `output/`) |
-| `j` | **▶ Start the join** |
-| `esc` | Back to the browser |
-| `r` | Join again (summary screen) |
-| `q` | Quit |
+Once you've picked your clips, arrange them and watch the live preview (clip count,
+total duration, size, and whether the join will be lossless):
+
+![Arranging your clips](docs/screenshots/arrange.png)
+
+| Key               | Action                                        |
+| ----------------- | --------------------------------------------- |
+| `↑ ↓`             | Move the cursor                               |
+| `space` / `Enter` | Toggle a clip in/out of the join              |
+| `Shift+↑ ↓`       | Reorder the selected clip                     |
+| `o`               | Rename the output file (saved into `output/`) |
+| `j`               | **▶ Start the join**                          |
+| `esc`             | Back to the browser                           |
+| `r`               | Join again (summary screen)                   |
+| `q`               | Quit                                          |
 
 ## Project structure
+
+The interface is built with [Ink](https://github.com/vadimdemedes/ink) (React for the
+terminal), the same UI framework behind Claude Code, with the video engine kept cleanly
+separate from it:
 
 ```
 src/
   index.tsx            # CLI entry (bin: clip-join)
   config.ts            # extensions, output dir, default name, encode settings
-  core/                # domain logic, no UI — unit-testable
+  core/                # domain logic, no UI, unit-testable
     videos · probe · join · output · format · types
   ui/                  # Ink presentation layer
     App.tsx            # phase router (splash → browse → edit → join → summary)
@@ -114,8 +106,8 @@ src/
 
 ## Roadmap
 
-- Transitions between clips (crossfade/dissolve via ffmpeg `xfade`/`acrossfade`) — opt-in,
-  since transitions require re-encoding.
+- Transitions between clips (crossfade/dissolve via ffmpeg `xfade`/`acrossfade`), opt-in
+  since they require re-encoding.
 - Per-clip trimming (in/out points).
 - Audio normalization.
 
@@ -129,8 +121,8 @@ conventions, and the PR process.
 ## Notes
 
 - A successful lossless stream copy doesn't guarantee every player handles a file with
-  slightly different per-clip encoding perfectly — if playback looks off, the clips
-  likely need re-encoding (ClipJoin falls back automatically when stream copy fails).
+  slightly different per-clip encoding perfectly. If playback looks off, the clips likely
+  need re-encoding (ClipJoin falls back automatically when stream copy fails).
 - **Original files are never modified or deleted.**
 - Output names are always confined to `output/` (a path typed into the rename field is
   reduced to its basename).
