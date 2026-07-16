@@ -8,6 +8,8 @@ dist/
 .DS_Store
 
 # Video & media files — never commit source clips or renders
+*.mp4
+*.MP4
 *.mov
 *.MOV
 *.mkv

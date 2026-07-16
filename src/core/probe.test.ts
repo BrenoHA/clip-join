@@ -13,8 +13,8 @@ describe('probe utilities', () => {
           },
         ],
       };
-      const v = probe.streams.find((s: any) => s.codec_type === 'video');
-      const signature = `${v.codec_name ?? '?'} ${v.width ?? '?'}x${v.height ?? '?'}`;
+      const v = probe.streams.find((s: any) => s.codec_type === 'video') as any;
+      const signature = `${v?.codec_name ?? '?'} ${v?.width ?? '?'}x${v?.height ?? '?'}`;
       expect(signature).toBe('h264 1920x1080');
     });
 
@@ -29,8 +29,8 @@ describe('probe utilities', () => {
           },
         ],
       };
-      const v = probe.streams.find((s: any) => s.codec_type === 'video');
-      const signature = `${v.codec_name ?? '?'} ${v.width ?? '?'}x${v.height ?? '?'}`;
+      const v = probe.streams.find((s: any) => s.codec_type === 'video') as any;
+      const signature = `${v?.codec_name ?? '?'} ${v?.width ?? '?'}x${v?.height ?? '?'}`;
       expect(signature).toBe('? 1920x1080');
     });
 
@@ -43,7 +43,7 @@ describe('probe utilities', () => {
           },
         ],
       };
-      const v = (probe?.streams ?? []).find((s: any) => s.codec_type === 'video');
+      const v = (probe?.streams ?? []).find((s: any) => s.codec_type === 'video') as any;
       const signature = v ? `${v.codec_name ?? '?'} ${v.width ?? '?'}x${v.height ?? '?'}` : 'unknown';
       expect(signature).toBe('unknown');
     });
@@ -61,8 +61,8 @@ describe('probe utilities', () => {
             },
           ],
         };
-        const v = probe.streams.find((s: any) => s.codec_type === 'video');
-        const signature = `${v.codec_name ?? '?'} ${v.width ?? '?'}x${v.height ?? '?'}`;
+        const v = probe.streams.find((s: any) => s.codec_type === 'video') as any;
+        const signature = `${v?.codec_name ?? '?'} ${v?.width ?? '?'}x${v?.height ?? '?'}`;
         expect(signature).toContain(codec);
       });
     });
@@ -70,28 +70,28 @@ describe('probe utilities', () => {
 
   describe('duration parsing', () => {
     it('should parse valid duration', () => {
-      const probe = { format: { duration: '60.5' } };
+      const probe = { format: { duration: '60.5' } } as any;
       const d = parseFloat(probe?.format?.duration);
       const duration = Number.isFinite(d) ? d : 0;
       expect(duration).toBe(60.5);
     });
 
     it('should return 0 for missing duration', () => {
-      const probe = { format: {} };
+      const probe = { format: {} } as any;
       const d = parseFloat(probe?.format?.duration);
       const duration = Number.isFinite(d) ? d : 0;
       expect(duration).toBe(0);
     });
 
     it('should return 0 for invalid duration', () => {
-      const probe = { format: { duration: 'invalid' } };
+      const probe = { format: { duration: 'invalid' } } as any;
       const d = parseFloat(probe?.format?.duration);
       const duration = Number.isFinite(d) ? d : 0;
       expect(duration).toBe(0);
     });
 
     it('should handle zero duration', () => {
-      const probe = { format: { duration: '0' } };
+      const probe = { format: { duration: '0' } } as any;
       const d = parseFloat(probe?.format?.duration);
       const duration = Number.isFinite(d) ? d : 0;
       expect(duration).toBe(0);
@@ -106,7 +106,7 @@ describe('probe utilities', () => {
             creation_time: '2024-01-15T10:30:00Z',
           },
         },
-      };
+      } as any;
       const ct = probe?.format?.tags?.creation_time;
       const parsed = typeof ct === 'string' ? new Date(ct) : null;
       expect(parsed).toBeInstanceOf(Date);
@@ -120,14 +120,14 @@ describe('probe utilities', () => {
             creation_time: 'invalid-date',
           },
         },
-      };
+      } as any;
       const ct = probe?.format?.tags?.creation_time;
       const parsed = typeof ct === 'string' ? new Date(ct) : null;
       expect(Number.isNaN(parsed?.getTime())).toBe(true);
     });
 
     it('should handle missing creation_time', () => {
-      const probe = { format: { tags: {} } };
+      const probe = { format: { tags: {} } } as any;
       const ct = probe?.format?.tags?.creation_time;
       expect(ct).toBeUndefined();
     });

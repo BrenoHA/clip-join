@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { humanSize, humanTime, humanClock } from './format';
+import { humanSize, humanTime, humanClock } from './format.js';
 
 describe('format utilities', () => {
   describe('humanSize', () => {

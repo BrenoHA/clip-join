@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { sortClips, canLossless } from './videos';
-import type { Clip } from './types';
+import { sortClips, canLossless } from './videos.js';
+import type { Clip } from './types.js';
 
 describe('videos utilities', () => {
   describe('sortClips', () => {
@@ -58,7 +58,7 @@ describe('videos utilities', () => {
         { ...clips[2], name: 'Banana' },
       ];
       const sorted = sortClips(mixedCase, 'name');
-      expect(sorted.map((c) => c.name.toLowerCase())).toEqual([
+      expect(sorted.map((c: Clip) => c.name.toLowerCase())).toEqual([
         'apple',
         'banana',
         'zebra',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Clip, JoinMode, JoinResult } from './types';
+import type { Clip, JoinMode, JoinResult } from './types.js';
 
 describe('join utilities', () => {
   describe('buildConcatFile logic', () => {
