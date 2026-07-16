@@ -1,7 +1,31 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# OS / editor cruft
 .DS_Store
+
+# Video & media files — never commit source clips or renders
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.mkv
+*.avi
+*.webm
+*.m4v
+*.flv
+*.wmv
+*.mpg
+*.mpeg
+*.thm
+*.THM
+
+# Local input clips (working folder, not part of the repo)
+input/
+
+# Generated output — ignore everything except the folder's README
 output/*
 !output/README.md
-*.mp4
-input/
