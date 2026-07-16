@@ -10,12 +10,13 @@ interface Props {
 const TRACK = 34;
 const CLIP = "▐████▌";
 const MERGED = "▐██████████▌";
+const CLIP_ROWS = 4; // clip height, matched to the logo so the snap flows into it
 const STEPS = 8;
 const FRAME_MS = 90;
 const CENTER = Math.floor(TRACK / 2);
 
-// Two clips sliding inward toward the center for a given step.
-function approachFrame(step: number): string {
+// One row of the two clips sliding inward toward the center for a given step.
+function approachRow(step: number): string {
   const track = Array.from({ length: TRACK }, () => " ");
   const lx = Math.round((step / STEPS) * (CENTER - CLIP.length));
   const rx = TRACK - CLIP.length - lx;
@@ -26,9 +27,14 @@ function approachFrame(step: number): string {
   return track.join("");
 }
 
-function mergedFrame(): string {
+function mergedRow(): string {
   const pad = Math.floor((TRACK - MERGED.length) / 2);
   return " ".repeat(pad) + MERGED;
+}
+
+// Stack a row into a CLIP_ROWS-tall block.
+function block(row: string): string[] {
+  return Array.from({ length: CLIP_ROWS }, () => row);
 }
 
 // Frame milestones: approach (0..STEPS) → snap → banner reveal → brief hold.
@@ -67,6 +73,7 @@ export function SplashScreen({ onDone }: Props) {
   useInput(() => finish()); // any key skips
 
   const showBanner = frame >= REVEAL;
+  const rows = frame >= SNAP ? block(mergedRow()) : block(approachRow(frame));
 
   return (
     <Box flexDirection="column" paddingX={1} paddingY={1}>
@@ -74,7 +81,11 @@ export function SplashScreen({ onDone }: Props) {
         <Banner />
       ) : (
         <Box flexDirection="column">
-          <Text color={theme.logo}>{frame >= SNAP ? mergedFrame() : approachFrame(frame)}</Text>
+          {rows.map((row, i) => (
+            <Text key={i} color={theme.logo}>
+              {row}
+            </Text>
+          ))}
           <Box marginTop={1}>
             <Text color={theme.muted}>{frame >= SNAP ? "✦ joining" : "clip + clip"}</Text>
           </Box>
