@@ -8,7 +8,10 @@
 
 Run ClipJoin, pick the files you want, reorder them, and hit join. Simple as that.
 
-![Browsing to your clips](docs/screenshots/browse.png)
+<video width="100%" controls>
+  <source src="docs/videos/usage-demo.mov" type="video/quicktime">
+  Your browser doesn't support HTML5 video.
+</video>
 
 Matching clips merge **losslessly in seconds**, with no re-encoding and no quality loss
 (40×1GB in seconds, not hours). Different formats? ClipJoin re-encodes them for you. No
@@ -68,8 +71,6 @@ Everything is keyboard-driven.
 
 Once you've picked your clips, arrange them and watch the live preview (clip count,
 total duration, size, and whether the join will be lossless):
-
-![Arranging your clips](docs/screenshots/arrange.png)
 
 | Key               | Action                                        |
 | ----------------- | --------------------------------------------- |
