@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import path from "node:path";
 import type { Clip } from "../../core/types.js";
-import { humanTime } from "../../core/format.js";
+import { humanClock } from "../../core/format.js";
 import { resolveOutputPath } from "../../core/output.js";
 import { theme } from "../theme.js";
 import { PreviewPanel } from "../components/PreviewPanel.js";
@@ -91,7 +91,7 @@ export function EditScreen({
                 inverse={active}
               >
                 {active ? "▸" : " "} {num}. {clip.included ? "[x]" : "[ ]"}{" "}
-                {clip.name.padEnd(24).slice(0, 24)} {humanTime(clip.durationSec).slice(3)}
+                {clip.name.padEnd(24).slice(0, 24)} {humanClock(clip.durationSec)}
               </Text>
             );
           })}

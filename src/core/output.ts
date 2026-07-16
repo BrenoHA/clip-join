@@ -7,7 +7,10 @@ import { OUTPUT_DIR, defaultOutputName } from "../config.js";
  * basename is honored, so "../evil.mp4" or an absolute path can't escape output/.
  */
 export function resolveOutputPath(name: string): string {
-  const base = path.basename(name.trim()) || defaultOutputName();
+  let base = path.basename(name.trim());
+  // basename() strips separators; "." / ".." would still resolve to or above
+  // OUTPUT_DIR, so fall back to the default for those (and for an empty name).
+  if (!base || base === "." || base === "..") base = defaultOutputName();
   return path.join(OUTPUT_DIR, base);
 }
 

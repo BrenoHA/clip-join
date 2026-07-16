@@ -15,3 +15,9 @@ export function humanTime(secs: number): string {
   const pad = (x: number) => String(x).padStart(2, "0");
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
+
+/** Compact clock: MM:SS, promoting to HH:MM:SS only when there are hours. */
+export function humanClock(secs: number): string {
+  const t = humanTime(secs);
+  return t.startsWith("00:") ? t.slice(3) : t;
+}
