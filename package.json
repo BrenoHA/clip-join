@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "author": "BrenoHA",
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@10.17.1",
   "keywords": [
     "video",
     "ffmpeg",
