@@ -28,7 +28,10 @@
     "dev": "tsx src/index.tsx",
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "ink": "^5.1.0",
@@ -41,6 +44,8 @@
     "@types/react": "^18.3.12",
     "ink-testing-library": "^4.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9",
+    "happy-dom": "^16.0.0"
   }
 }

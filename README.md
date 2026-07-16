@@ -104,6 +104,19 @@ src/
 
 `core/` never imports Ink, so the engine can be exercised without a terminal.
 
+## Testing
+
+Unit tests cover core functionality and can be run without ffmpeg installed:
+
+```bash
+pnpm test              # run all unit tests
+pnpm test --watch     # run tests in watch mode during development
+pnpm test --ui        # open test UI in browser
+```
+
+Tests use [Vitest](https://vitest.dev/) and cover formatting utilities, video sorting,
+codec detection, and join logic. See `src/core/*.test.ts` for examples.
+
 ## Roadmap
 
 - Transitions between clips (crossfade/dissolve via ffmpeg `xfade`/`acrossfade`), opt-in

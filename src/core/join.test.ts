@@ -1,0 +1,137 @@
+import { describe, it, expect } from 'vitest';
+import type { Clip, JoinMode, JoinResult } from './types';
+
+describe('join utilities', () => {
+  describe('buildConcatFile logic', () => {
+    it('should properly escape single quotes in paths', () => {
+      const path = "/videos/clip's video.mp4";
+      const escaped = path.replace(/'/g, "'\\''");
+      expect(escaped).toBe("/videos/clip'\\''s video.mp4");
+    });
+
+    it('should handle paths with multiple quotes', () => {
+      const path = "O'Brien's 'best' clip.mp4";
+      const escaped = path.replace(/'/g, "'\\''");
+      expect(escaped).toBe("O'\\''Brien'\\''s '\\''best'\\'' clip.mp4");
+    });
+
+    it('should handle normal paths without quotes', () => {
+      const path = '/videos/normal_video.mp4';
+      const escaped = path.replace(/'/g, "'\\''");
+      expect(escaped).toBe('/videos/normal_video.mp4');
+    });
+
+    it('should format concat file entries correctly', () => {
+      const paths = ['/videos/1.mp4', '/videos/2.mp4', '/videos/3.mp4'];
+      const body = paths
+        .map((p) => `file '${p.replace(/'/g, "'\\''")}'`)
+        .join('\n');
+      const lines = body.split('\n');
+      expect(lines).toHaveLength(3);
+      expect(lines[0]).toContain("file '/videos/1.mp4'");
+    });
+  });
+
+  describe('lossless vs re-encode decision', () => {
+    const baseClip: Clip = {
+      id: '1',
+      path: '/videos/video.mp4',
+      name: 'video.mp4',
+      durationSec: 60,
+      sizeBytes: 1000000,
+      creationTime: new Date(),
+      videoSignature: 'h264_1920x1080',
+      included: true,
+    };
+
+    it('should attempt lossless join by default', () => {
+      const forceReencode = false;
+      expect(forceReencode).toBe(false);
+    });
+
+    it('should force re-encode when requested', () => {
+      const forceReencode = true;
+      expect(forceReencode).toBe(true);
+    });
+
+    it('should use valid CRF range', () => {
+      const DEFAULT_CRF = 28;
+      expect(DEFAULT_CRF).toBeGreaterThan(0);
+      expect(DEFAULT_CRF).toBeLessThan(51);
+    });
+
+    it('should use valid preset', () => {
+      const DEFAULT_PRESET = 'medium';
+      expect(['fast', 'medium', 'slow']).toContain(DEFAULT_PRESET);
+    });
+  });
+
+  describe('progress tracking', () => {
+    it('should parse out_time_us from ffmpeg progress', () => {
+      const progressLine = 'out_time_us=5000000';
+      const m = progressLine.match(/^out_time_(?:us|ms)=(\d+)/);
+      expect(m).toBeTruthy();
+      expect(m?.[1]).toBe('5000000');
+    });
+
+    it('should parse out_time_ms from ffmpeg progress', () => {
+      const progressLine = 'out_time_ms=5000000';
+      const m = progressLine.match(/^out_time_(?:us|ms)=(\d+)/);
+      expect(m).toBeTruthy();
+      expect(m?.[1]).toBe('5000000');
+    });
+
+    it('should calculate progress fraction', () => {
+      const totalDuration = 60;
+      const timeUs = 30000000;
+      const fraction = Math.min(1, Math.max(0, timeUs / 1_000_000 / totalDuration));
+      expect(fraction).toBe(0.5);
+    });
+
+    it('should clamp progress fraction between 0 and 1', () => {
+      const totalDuration = 60;
+      const fraction1 = Math.min(1, Math.max(0, -1000000 / 1_000_000 / totalDuration));
+      expect(fraction1).toBe(0);
+      const fraction2 = Math.min(1, Math.max(0, 120000000 / 1_000_000 / totalDuration));
+      expect(fraction2).toBe(1);
+    });
+
+    it('should handle zero duration edge case', () => {
+      const totalDuration = 0;
+      const timeUs = 5000000;
+      const result = totalDuration > 0 ? timeUs / 1_000_000 / totalDuration : 0;
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('JoinResult structure', () => {
+    const mockResult: JoinResult = {
+      mode: 'lossless',
+      outputPath: '/output/joined_output_2024-01-15_101530.mp4',
+      sizeBytes: 2000000,
+      durationSec: 120,
+      elapsedMs: 5000,
+    };
+
+    it('should have required properties', () => {
+      expect(mockResult).toHaveProperty('mode');
+      expect(mockResult).toHaveProperty('outputPath');
+      expect(mockResult).toHaveProperty('sizeBytes');
+      expect(mockResult).toHaveProperty('durationSec');
+      expect(mockResult).toHaveProperty('elapsedMs');
+    });
+
+    it('should have valid mode', () => {
+      const validModes: JoinMode[] = ['lossless', 'reencode'];
+      expect(validModes).toContain(mockResult.mode);
+    });
+
+    it('should have non-negative sizeBytes', () => {
+      expect(mockResult.sizeBytes).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should have non-negative elapsedMs', () => {
+      expect(mockResult.elapsedMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+});

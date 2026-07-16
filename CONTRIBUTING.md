@@ -21,6 +21,7 @@ Run these and make sure they're clean:
 
 ```bash
 pnpm typecheck       # tsc, strict mode — must pass
+pnpm test            # run unit tests — must pass
 pnpm build           # must build
 ```
 
