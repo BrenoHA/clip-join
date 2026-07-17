@@ -82,11 +82,17 @@ export function App({ initialFolder }: Props) {
     setProbeTotal(files.length);
     setProbeDone(0);
     setPhase("probing");
-    const probed = await probeClips(files, (done) => setProbeDone(done));
-    setClips(sortClips(probed, "date"));
-    setOutputName(defaultOutputName()); // fresh timestamped name per session
-    setTransition("none");
-    setPhase("edit");
+    try {
+      const probed = await probeClips(files, (done) => setProbeDone(done));
+      setClips(sortClips(probed, "date"));
+      setOutputName(defaultOutputName()); // fresh timestamped name per session
+      setTransition("none");
+      setPhase("edit");
+    } catch (e) {
+      // Never leave the user stranded on the spinner if probing blows up.
+      setErrorMsg((e as Error).message || "Failed to read clip metadata.");
+      setPhase("error");
+    }
   }
 
   async function startJoin() {

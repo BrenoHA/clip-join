@@ -6,10 +6,23 @@ import { REENCODE_CRF, REENCODE_PRESET, TRANSITION_DURATION_SEC, TRANSITIONS } f
 import { ensureOutputDir } from "./output.js";
 import type { Clip, JoinMode, JoinProgress, JoinResult, Transition } from "./types.js";
 
+/**
+ * ffmpeg's concat demuxer treats backslash as an escape character, so a raw
+ * Windows path (`C:\Users\me\clip.mp4`) gets mangled. Forward slashes work on
+ * every platform (Windows ffmpeg accepts them too), so normalize on Windows.
+ * Pure and platform-parameterized so it can be unit-tested off-Windows.
+ */
+export function normalizeConcatPath(
+  p: string,
+  isWindows = process.platform === "win32"
+): string {
+  return isWindows ? p.replace(/\\/g, "/") : p;
+}
+
 async function buildConcatFile(paths: string[]): Promise<string> {
   const tmp = path.join(os.tmpdir(), `clipjoin-${Date.now()}-${process.pid}.txt`);
   const body = paths
-    .map((p) => `file '${path.resolve(p).replace(/'/g, "'\\''")}'`)
+    .map((p) => `file '${normalizeConcatPath(path.resolve(p)).replace(/'/g, "'\\''")}'`)
     .join("\n");
   await fs.writeFile(tmp, body + "\n", "utf8");
   return tmp;
@@ -22,7 +35,9 @@ function runFfmpeg(
   onProgress?: (p: JoinProgress) => void
 ): Promise<{ code: number; stderr: string }> {
   return new Promise((resolve) => {
-    const proc = spawn("ffmpeg", [...args, "-progress", "pipe:1", "-nostats"]);
+    const proc = spawn("ffmpeg", [...args, "-progress", "pipe:1", "-nostats"], {
+      windowsHide: true, // don't flash a console window / steal focus on Windows
+    });
     let stderr = "";
     let stdoutBuf = "";
 

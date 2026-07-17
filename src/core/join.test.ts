@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Clip, JoinMode, JoinResult } from './types.js';
-import { buildTransitionArgs, resolveTransitionDuration } from './join.js';
+import { buildTransitionArgs, normalizeConcatPath, resolveTransitionDuration } from './join.js';
 import { TRANSITION_DURATION_SEC } from '../config.js';
 
 function makeClip(over: Partial<Clip> = {}): Clip {
@@ -40,6 +40,16 @@ describe('join utilities', () => {
       const path = '/videos/normal_video.mp4';
       const escaped = path.replace(/'/g, "'\\''");
       expect(escaped).toBe('/videos/normal_video.mp4');
+    });
+
+    it('rewrites Windows backslash paths to forward slashes', () => {
+      const p = 'C:\\Users\\me\\My Clips\\GX011199.MP4';
+      expect(normalizeConcatPath(p, true)).toBe('C:/Users/me/My Clips/GX011199.MP4');
+    });
+
+    it('leaves POSIX paths untouched (backslash is a legal filename char)', () => {
+      const p = '/videos/weird\\name.mp4';
+      expect(normalizeConcatPath(p, false)).toBe('/videos/weird\\name.mp4');
     });
 
     it('should format concat file entries correctly', () => {
