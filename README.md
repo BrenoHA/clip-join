@@ -8,7 +8,7 @@
 
 Run ClipJoin, pick the files you want, reorder them, and hit join. Simple as that.
 
-![Usage demo](docs/videos/usage-demo.gif)
+![Usage demo](docs/gifs/usage-demo.gif)
 
 Matching clips merge **losslessly in seconds**, with no re-encoding and no quality loss
 (40×1GB in seconds, not hours). Different formats? ClipJoin re-encodes them for you. No
