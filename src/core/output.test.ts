@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
 
 const OUTPUT_DIR = 'output';
 const defaultOutputName = () => {
@@ -75,6 +77,68 @@ describe('output utilities', () => {
     it('should handle nested paths by extracting basename', () => {
       const result = resolveOutputPath('/some/deep/path/video.mp4');
       expect(result).toBe(path.join(OUTPUT_DIR, 'video.mp4'));
+    });
+  });
+
+  describe('writeChaptersFile', () => {
+    it('should write chapters with correct timestamps and clip names', async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'clipjoin-test-'));
+      const videoPath = path.join(tmpDir, 'my_video.mp4');
+      const clips = [
+        { name: 'intro.mp4', durationSec: 35, included: true },
+        { name: 'main.mp4', durationSec: 149, included: true },
+        { name: 'outro.mp4', durationSec: 55, included: true },
+      ].map((c) => ({
+        id: c.name,
+        path: c.name,
+        name: c.name,
+        durationSec: c.durationSec,
+        sizeBytes: 0,
+        creationTime: new Date(),
+        mtime: new Date(),
+        videoSignature: 'h264 1920x1080',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        hasAudio: true,
+        included: c.included,
+      }));
+
+      // Dynamically import so we get the real implementation.
+      const { writeChaptersFile } = await import('./output.js');
+      const chaptersPath = await writeChaptersFile(clips, videoPath);
+
+      expect(chaptersPath).toBe(path.join(tmpDir, 'my_video_chapters.txt'));
+      const content = await fs.readFile(chaptersPath, 'utf-8');
+      expect(content).toBe('00:00 intro\n00:35 main\n03:04 outro\n');
+
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+
+    it('should return empty string for no clips', async () => {
+      const { writeChaptersFile } = await import('./output.js');
+      const result = await writeChaptersFile([], '/some/video.mp4');
+      expect(result).toBe('');
+    });
+
+    it('should strip extension from clip names', async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'clipjoin-test-'));
+      const videoPath = path.join(tmpDir, 'out.mp4');
+      const clips = [
+        {
+          name: 'GOPR0001.MP4', durationSec: 10, id: '1', path: 'GOPR0001.MP4',
+          sizeBytes: 0, creationTime: new Date(), mtime: new Date(),
+          videoSignature: 'h264 1920x1080', width: 1920, height: 1080,
+          fps: 30, hasAudio: true, included: true,
+        },
+      ];
+
+      const { writeChaptersFile } = await import('./output.js');
+      const chaptersPath = await writeChaptersFile(clips, videoPath);
+      const content = await fs.readFile(chaptersPath, 'utf-8');
+      expect(content).toBe('00:00 GOPR0001\n');
+
+      await fs.rm(tmpDir, { recursive: true, force: true });
     });
   });
 

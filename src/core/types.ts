@@ -30,6 +30,7 @@ export interface JoinResult {
   sizeBytes: number;
   durationSec: number;
   elapsedMs: number;
+  chaptersPath?: string;
 }
 
 export interface JoinProgress {

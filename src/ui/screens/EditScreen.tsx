@@ -16,6 +16,8 @@ interface Props {
   setOutputName: (name: string) => void;
   transition: Transition;
   setTransition: (t: Transition) => void;
+  generateChapters: boolean;
+  setGenerateChapters: (v: boolean) => void;
   onJoin: () => void;
   onBack: () => void;
   onQuit: () => void;
@@ -30,6 +32,8 @@ export function EditScreen({
   setOutputName,
   transition,
   setTransition,
+  generateChapters,
+  setGenerateChapters,
   onJoin,
   onBack,
   onQuit,
@@ -67,6 +71,8 @@ export function EditScreen({
     } else if (input === "t") {
       const idx = TRANSITIONS.findIndex((t) => t.id === transition);
       setTransition(TRANSITIONS[(idx + 1) % TRANSITIONS.length].id);
+    } else if (input === "c") {
+      setGenerateChapters(!generateChapters);
     } else if (input === "j") {
       // j = Join. (Enter toggles the clip; it never starts the join.)
       if (clips.some((c) => c.included)) onJoin();
@@ -112,6 +118,7 @@ export function EditScreen({
           clips={clips}
           outputPath={resolveOutputPath(outputName)}
           transition={transition}
+          chaptersEnabled={generateChapters}
           editingValue={editingOutput ? draftOutput : null}
           onChangeEditing={setDraftOutput}
           onSubmitEditing={(val) => {
@@ -130,6 +137,7 @@ export function EditScreen({
             { keys: "Shift+↑↓", label: "reorder" },
             { keys: "o", label: "rename output" },
             { keys: "t", label: `transition: ${transitionLabel}` },
+            { keys: "c", label: `chapters: ${generateChapters ? "ON" : "OFF"}` },
           ],
           [
             { keys: "j", label: `▶ JOIN${included.length === 0 ? " (select a clip first)" : ""}`, primary: true },

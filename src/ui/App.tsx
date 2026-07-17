@@ -6,7 +6,7 @@ import { defaultOutputName } from "../config.js";
 import { checkDeps, probeClips, type DepStatus } from "../core/probe.js";
 import { findVideos, sortClips } from "../core/videos.js";
 import { runJoin } from "../core/join.js";
-import { resolveOutputPath } from "../core/output.js";
+import { resolveOutputPath, writeChaptersFile } from "../core/output.js";
 import type { Clip, JoinMode, JoinResult, Transition } from "../core/types.js";
 import { useFullscreen } from "./hooks/useFullscreen.js";
 import { theme } from "./theme.js";
@@ -42,6 +42,7 @@ export function App({ initialFolder }: Props) {
   const [clips, setClips] = useState<Clip[]>([]);
   const [outputName, setOutputName] = useState(defaultOutputName);
   const [transition, setTransition] = useState<Transition>("none");
+  const [generateChapters, setGenerateChapters] = useState(false);
   const [probeDone, setProbeDone] = useState(0);
   const [probeTotal, setProbeTotal] = useState(0);
   const [progress, setProgress] = useState<{ fraction: number; mode: JoinMode }>({
@@ -112,6 +113,10 @@ export function App({ initialFolder }: Props) {
           }
         },
       });
+      if (generateChapters) {
+        const included = clips.filter((c) => c.included);
+        res.chaptersPath = await writeChaptersFile(included, res.outputPath);
+      }
       setResult(res);
       setPhase("done");
     } catch (e) {
@@ -176,6 +181,8 @@ export function App({ initialFolder }: Props) {
           setOutputName={setOutputName}
           transition={transition}
           setTransition={setTransition}
+          generateChapters={generateChapters}
+          setGenerateChapters={setGenerateChapters}
           onJoin={() => void startJoin()}
           onBack={() => setPhase("browse")}
           onQuit={exit}
