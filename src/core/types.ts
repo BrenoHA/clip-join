@@ -5,6 +5,8 @@ export interface Clip {
   durationSec: number;
   sizeBytes: number;
   creationTime: Date;
+  /** File modified time (from the filesystem), shown on the arrange screen. */
+  mtime: Date;
   /** codec + WxH of the first video stream; used to guess lossless-ability. */
   videoSignature: string;
   /** Pixel dimensions of the first video stream (0 if unknown). */

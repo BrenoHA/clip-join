@@ -21,3 +21,23 @@ export function humanClock(secs: number): string {
   const t = humanTime(secs);
   return t.startsWith("00:") ? t.slice(3) : t;
 }
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/**
+ * Finder-style modified date in local time, e.g. "Jul 16, 2026, 7:07 PM".
+ * Used for the browse screen's Date Modified column.
+ */
+export function humanDate(d: Date): string {
+  const month = MONTHS[d.getMonth()];
+  const day = d.getDate();
+  const year = d.getFullYear();
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ampm = d.getHours() >= 12 ? "PM" : "AM";
+  let hour = d.getHours() % 12;
+  if (hour === 0) hour = 12;
+  return `${month} ${day}, ${year}, ${hour}:${min} ${ampm}`;
+}

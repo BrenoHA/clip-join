@@ -9,9 +9,15 @@ interface Props {
 
 export function Header({ subtitle }: Props) {
   return (
-    <Box flexDirection="column" paddingX={1} marginBottom={1}>
+    <Box flexDirection="column" paddingX={1}>
       <Banner />
-      {subtitle ? <Text color={theme.muted}>{subtitle}</Text> : null}
+      {subtitle ? (
+        <Text color={theme.subtitle}>
+          {"\n"}
+          {"> "}
+          {subtitle}
+        </Text>
+      ) : null}
     </Box>
   );
 }

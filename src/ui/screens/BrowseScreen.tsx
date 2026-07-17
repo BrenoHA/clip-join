@@ -4,6 +4,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DEFAULT_EXTS } from "../../config.js";
+import { humanDate } from "../../core/format.js";
 import { theme } from "../theme.js";
 import { KeyHints } from "../components/KeyHints.js";
 
@@ -13,6 +14,8 @@ interface Entry {
   isDir: boolean;
   isVideo: boolean;
   selected: boolean;
+  /** Modified time — only fetched for video files (the selectable ones). */
+  mtime: Date | null;
 }
 
 interface Props {
@@ -23,6 +26,8 @@ interface Props {
 
 const VIDEO_EXTS = new Set(DEFAULT_EXTS);
 const VISIBLE = 12;
+/** Width of the name column so the Date Modified column lines up across rows. */
+const NAME_W = 30;
 
 function isVideoFile(name: string): boolean {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
@@ -39,19 +44,35 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
   async function load(target: string, selectName?: string) {
     try {
       const dirents = await fs.readdir(target, { withFileTypes: true });
-      const list: Entry[] = dirents
-        .filter((d) => !d.name.startsWith("."))
-        .map((d) => ({
-          name: d.name,
-          path: path.join(target, d.name),
-          isDir: d.isDirectory(),
-          isVideo: d.isFile() && isVideoFile(d.name),
-          selected: selected.has(path.join(target, d.name)),
-        }))
-        .sort((a, b) => {
-          if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
-          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-        });
+      const list: Entry[] = await Promise.all(
+        dirents
+          .filter((d) => !d.name.startsWith("."))
+          .map(async (d) => {
+            const full = path.join(target, d.name);
+            const isVideo = d.isFile() && isVideoFile(d.name);
+            // Only selectable (video) files need a modified date, so skip the
+            // stat() for everything else and keep directory listings fast.
+            let mtime: Date | null = null;
+            if (isVideo) {
+              mtime = await fs
+                .stat(full)
+                .then((s) => s.mtime)
+                .catch(() => null);
+            }
+            return {
+              name: d.name,
+              path: full,
+              isDir: d.isDirectory(),
+              isVideo,
+              selected: selected.has(full),
+              mtime,
+            };
+          })
+      );
+      list.sort((a, b) => {
+        if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
       setEntries(list);
       const idx = selectName ? list.findIndex((e) => e.name === selectName) : -1;
       setCursor(idx >= 0 ? idx : 0);
@@ -127,11 +148,19 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
             const active = idx === cursor;
             const icon = entry.isDir ? "📁" : entry.isVideo ? "🎬" : "  ";
             const check = entry.isVideo ? (entry.selected ? "[x]" : "[ ]") : "   ";
+            const label = `${entry.name}${entry.isDir ? "/" : ""}`;
+            // Video rows pad the name so their Date Modified column aligns;
+            // other rows just show the (untruncated) name with no date.
+            const name = entry.isVideo
+              ? label.length > NAME_W
+                ? label.slice(0, NAME_W - 1) + "…"
+                : label.padEnd(NAME_W)
+              : label;
+            const modified = entry.isVideo && entry.mtime ? `  ${humanDate(entry.mtime)}` : "";
             return (
               <Text key={entry.path} color={active ? theme.brand : undefined} inverse={active}>
                 {active ? "▸ " : "  "}
-                {check} {icon} {entry.name}
-                {entry.isDir ? "/" : ""}
+                {check} {icon} {name}{modified}
               </Text>
             );
           })

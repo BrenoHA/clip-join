@@ -125,13 +125,13 @@ export function App({ initialFolder }: Props) {
   }
 
   const subtitles: Record<Exclude<Phase, "splash">, string> = {
-    missingdeps: "· setup needed",
-    browse: "· browse to your clips",
-    probing: "· reading clips",
-    edit: "· arrange your clips",
-    joining: "· joining",
-    done: "· done",
-    error: "· error",
+    missingdeps: "Setup needed",
+    browse: "Browse to your clips",
+    probing: "Reading clips",
+    edit: "Arrange your clips",
+    joining: "Joining",
+    done: "Done",
+    error: "Error",
   };
 
   let body: React.ReactNode = null;

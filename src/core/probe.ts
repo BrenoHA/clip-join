@@ -93,6 +93,7 @@ export async function probeClips(
       durationSec: getDuration(probe),
       sizeBytes: stat.size,
       creationTime: await getCreationTime(abs, probe),
+      mtime: stat.mtime,
       videoSignature: videoSignature(probe),
       width: Number(v?.width) || 0,
       height: Number(v?.height) || 0,

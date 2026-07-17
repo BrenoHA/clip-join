@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import path from "node:path";
 import type { Clip, Transition } from "../../core/types.js";
-import { humanClock } from "../../core/format.js";
+import { humanClock, humanDate } from "../../core/format.js";
 import { resolveOutputPath } from "../../core/output.js";
 import { TRANSITIONS } from "../../config.js";
 import { theme } from "../theme.js";
@@ -100,7 +100,9 @@ export function EditScreen({
                 inverse={active}
               >
                 {active ? "▸" : " "} {num}. {clip.included ? "[x]" : "[ ]"}{" "}
-                {clip.name.padEnd(24).slice(0, 24)} {humanClock(clip.durationSec)}
+                {clip.name.padEnd(16).slice(0, 16)} {humanClock(clip.durationSec)}
+                {" "}
+                {humanDate(clip.mtime)}
               </Text>
             );
           })}

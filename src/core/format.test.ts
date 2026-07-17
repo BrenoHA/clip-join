@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { humanSize, humanTime, humanClock } from './format.js';
+import { humanSize, humanTime, humanClock, humanDate } from './format.js';
 
 describe('format utilities', () => {
   describe('humanSize', () => {
@@ -102,6 +102,30 @@ describe('format utilities', () => {
 
     it('should handle negative numbers', () => {
       expect(humanClock(-10)).toBe('00:00');
+    });
+  });
+
+  describe('humanDate', () => {
+    // Constructed with local-time components; humanDate reads local getters,
+    // so these assertions are timezone-independent.
+    it('formats an afternoon date like Finder', () => {
+      expect(humanDate(new Date(2026, 6, 16, 19, 7))).toBe('Jul 16, 2026, 7:07 PM');
+    });
+
+    it('formats a morning date', () => {
+      expect(humanDate(new Date(2026, 0, 1, 9, 5))).toBe('Jan 1, 2026, 9:05 AM');
+    });
+
+    it('shows midnight as 12 AM', () => {
+      expect(humanDate(new Date(2026, 6, 16, 0, 0))).toBe('Jul 16, 2026, 12:00 AM');
+    });
+
+    it('shows noon as 12 PM', () => {
+      expect(humanDate(new Date(2026, 11, 31, 12, 0))).toBe('Dec 31, 2026, 12:00 PM');
+    });
+
+    it('zero-pads minutes but not the hour', () => {
+      expect(humanDate(new Date(2026, 2, 3, 13, 4))).toBe('Mar 3, 2026, 1:04 PM');
     });
   });
 });
