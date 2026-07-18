@@ -5,7 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "BrenoHA",
-  "packageManager": "pnpm@10.17.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrenoHA/clip-join.git"
+  },
+  "homepage": "https://github.com/BrenoHA/clip-join#readme",
+  "bugs": {
+    "url": "https://github.com/BrenoHA/clip-join/issues"
+  },
   "keywords": [
     "video",
     "ffmpeg",
@@ -16,6 +23,7 @@
     "join"
   ],
   "bin": {
+    "clipjoin": "dist/index.js",
     "clip-join": "dist/index.js"
   },
   "files": [
@@ -26,9 +34,10 @@
   },
   "scripts": {
     "dev": "tsx src/index.tsx",
-    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"
@@ -42,10 +51,10 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "^18.3.12",
+    "happy-dom": "^20.10.6",
     "ink-testing-library": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.9",
-    "happy-dom": "^16.0.0"
+    "vitest": "^4.1.10"
   }
 }
