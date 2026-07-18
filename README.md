@@ -1,18 +1,88 @@
-# ClipJoin 🎬
+<h1 align="center">ClipJoin 🎬</h1>
 
-**Merge your videos into one file: fast, lossless, and right from your terminal.**
+<p align="center"><strong>Merge your videos into one file: fast, lossless, and right from your terminal.</strong></p>
+
+<p align="center">🏆 The best, easiest way to merge your clips. No editor, no re-encoding, no fuss.</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/clip-join"><img src="https://img.shields.io/npm/v/clip-join?logo=npm&color=green" alt="npm version"></a>
+  <a href="https://github.com/BrenoHA/clip-join"><img src="https://img.shields.io/badge/GitHub-BrenoHA%2Fclip--join-blue?logo=github" alt="GitHub"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/clip-join?color=blue" alt="license"></a>
+</p>
 
 > _Back from a trip with a memory card full of GoPro clips? Select them, stitch them into
-> one file, and upload the whole adventure to YouTube in one shot, public or unlisted,
-> your call._
+> one file, and upload the whole adventure to YouTube in one shot, public or unlisted, your call._
+
+<p align="center">
+  <img src="docs/gifs/usage-demo.gif" alt="Usage demo">
+</p>
 
 Run ClipJoin, pick the files you want, reorder them, and hit join. Simple as that.
-
-![Usage demo](docs/gifs/usage-demo.gif)
 
 Matching clips merge **losslessly in seconds**, with no re-encoding and no quality loss
 (40×1GB in seconds, not hours). Different formats? ClipJoin re-encodes them for you. No
 flags, no config, just a clean keyboard-driven flow from folder to finished file.
+
+## Install
+
+Install once with npm:
+
+```bash
+npm install -g clip-join
+```
+
+> **ClipJoin uses [ffmpeg](#ffmpeg-required) on your `PATH`.** Install it before running `clipjoin` follow the steps bellow if you don't have it installed yet.
+
+Then run it from any folder:
+
+```bash
+clipjoin                 # launch anywhere  (clip-join works too, same command)
+```
+
+**Just trying it out?** Run it once, no install:
+
+```bash
+npx clip-join
+```
+
+### ffmpeg (required)
+
+ClipJoin uses **ffmpeg** (which bundles `ffprobe`). Install it with your package manager:
+
+```bash
+brew install ffmpeg        # macOS
+sudo apt install ffmpeg    # Debian / Ubuntu
+winget install ffmpeg      # Windows  (or: choco install ffmpeg / scoop install ffmpeg)
+```
+
+<details>
+<summary>Optional: one-line installer</summary>
+
+Prefer a single command that also checks Node + ffmpeg for you and fixes your PATH?
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BrenoHA/clip-join/main/install.sh | bash
+```
+
+It just wraps `npm install -g clip-join` with a few pre-flight checks.
+
+</details>
+
+## Where your videos are saved
+
+Every joined file lands in a fixed **ClipJoin** folder in your home, so it's always in the
+same predictable place no matter which directory you run `clipjoin` from:
+
+- **macOS** → `~/Movies/ClipJoin`
+- **Linux / Windows** → `~/Videos/ClipJoin`
+
+Files get a timestamped default name (`joined_output_YYYY-MM-DD_HHMMSS.mp4`), so repeated
+joins never overwrite one another. Send the output somewhere else for a run with `--out`:
+
+```bash
+clipjoin --out ~/Desktop         # write joined videos to ~/Desktop instead
+clipjoin ~/clips --out ~/Desktop # start in ~/clips, save to ~/Desktop
+```
 
 ## How it works
 
@@ -29,51 +99,19 @@ flags, no config, just a clean keyboard-driven flow from folder to finished file
 Optionally, add a **crossfade transition** between clips (press `t` on the arrange screen).
 It's off by default; enabling it re-encodes the output (transitions can't be done losslessly).
 
-Every joined file is written to a fixed **ClipJoin** folder in your home —
-`~/Movies/ClipJoin` on macOS, `~/Videos/ClipJoin` on Linux/Windows — so `clipjoin`
-saves to the same predictable place no matter which directory you run it from. Files
-get a timestamped default name (`joined_output_YYYY-MM-DD_HHMMSS.mp4`), so repeated
-joins never overwrite one another. Point it elsewhere for a run with `--out`:
+## Usage
+
+Everything is keyboard-driven.
 
 ```bash
-clipjoin --out ~/Desktop         # write joined videos to ~/Desktop instead
+clipjoin                 # launch and browse from the current folder
+clipjoin ~/clips         # jump straight into a folder
+clipjoin --out ~/Desktop # change where joined files are saved
+clipjoin --version       # print the installed version (alias: -v)
 ```
 
-## Install
-
-Install globally with npm — you get a `clipjoin` command anywhere
-(`clip-join` works too, they're the same thing):
-
-```bash
-npm install -g clip-join   # then run: clipjoin
-npx clip-join              # or run once without installing
-```
-
-**ffmpeg is required** (it bundles `ffprobe`) — install it with your package
-manager if you don't have it:
-
-```bash
-brew install ffmpeg        # macOS
-sudo apt install ffmpeg    # Debian/Ubuntu
-```
-
-<details>
-<summary>Optional: one-line installer</summary>
-
-Prefer a single command that also checks Node + ffmpeg for you and fixes PATH?
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/BrenoHA/clip-join/main/install.sh | bash
-```
-
-It just wraps `npm install -g clip-join` with a few pre-flight checks.
-
-</details>
-
-## Requirements
-
-- **Node.js 18+**
-- **ffmpeg** (bundles `ffprobe`) on your `PATH`
+No need to memorize anything, every available shortcut is shown right on the
+terminal as you go, so you always know your options at each step.
 
 ## Building from source
 
@@ -81,49 +119,11 @@ It just wraps `npm install -g clip-join` with a few pre-flight checks.
 git clone https://github.com/BrenoHA/clip-join.git
 cd clip-join
 npm install
-npm run build
+npm run build            # then: npm start
+npm run dev              # or run straight from source (via tsx), no build step
 ```
 
-## Usage
-
-```bash
-clipjoin                 # after installing globally
-clipjoin ~/clips         # jump straight into a folder
-
-npm run dev              # dev mode from source, no build step (via tsx)
-npm start                # from source, after `npm run build`
-npm start ~/clips        # jump straight into a folder
-
-Everything is keyboard-driven.
-
-**Browsing**
-
-| Key                          | Action                                               |
-| ---------------------------- | ---------------------------------------------------- |
-| `↑ ↓`                        | Move the cursor                                      |
-| `space` / `Enter`            | Open a directory, or select/deselect a video file    |
-| `←` / `Backspace` / `Delete` | Up a directory (cursor lands on the folder you left) |
-| `~`                          | Jump to your home directory                          |
-| `s`                          | Use every video in the current folder                |
-| `c`                          | Continue with the files you've selected              |
-| `q`                          | Quit                                                 |
-
-**Arranging & joining**
-
-Once you've picked your clips, arrange them and watch the live preview (clip count,
-total duration, size, and whether the join will be lossless):
-
-| Key               | Action                                        |
-| ----------------- | --------------------------------------------- |
-| `↑ ↓`             | Move the cursor                               |
-| `space` / `Enter` | Toggle a clip in/out of the join              |
-| `Shift+↑ ↓`       | Reorder the selected clip                     |
-| `o`               | Rename the output file (saved to the ClipJoin folder) |
-| `t`               | Toggle the transition (None / Crossfade)      |
-| `j`               | **▶ Start the join**                          |
-| `esc`             | Back to the browser                           |
-| `r`               | Join again (summary screen)                   |
-| `q`               | Quit                                          |
+Requires **Node.js 18+** and **ffmpeg** on your `PATH`.
 
 ## Project structure
 

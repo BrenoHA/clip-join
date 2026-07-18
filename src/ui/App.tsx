@@ -17,6 +17,14 @@ import { EditScreen } from "./screens/EditScreen.js";
 import { JoinScreen } from "./screens/JoinScreen.js";
 import { SummaryScreen } from "./screens/SummaryScreen.js";
 
+// Platform-appropriate way to install ffmpeg, shown when it's missing.
+const FFMPEG_INSTALL_HINT =
+  process.platform === "darwin"
+    ? "brew install ffmpeg"
+    : process.platform === "win32"
+      ? "winget install ffmpeg"
+      : "sudo apt install ffmpeg";
+
 type Phase =
   | "splash"
   | "missingdeps"
@@ -156,7 +164,7 @@ export function App({ initialFolder }: Props) {
           <Box marginTop={1}>
             <Text>ClipJoin needs ffmpeg to read and join videos. Install it with:</Text>
           </Box>
-          <Text color={theme.brand}> brew install ffmpeg</Text>
+          <Text color={theme.brand}> {FFMPEG_INSTALL_HINT}</Text>
           <Box marginTop={1}>
             <Text color={theme.muted}>Press q to quit, then re-run clip-join.</Text>
           </Box>
