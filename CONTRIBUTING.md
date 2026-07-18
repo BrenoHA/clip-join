@@ -8,21 +8,20 @@ so the rules are simple.
 ```bash
 git clone <your-fork>
 cd clip-join
-corepack enable pnpm   # if you don't already have pnpm
-pnpm install
-pnpm dev               # run the app (needs ffmpeg on PATH)
+npm install
+npm run dev            # run the app (needs ffmpeg on PATH)
 ```
 
-You'll need **Node 18+**, **pnpm**, and **ffmpeg** (which bundles `ffprobe`) installed.
+You'll need **Node 18+** and **ffmpeg** (which bundles `ffprobe`) installed.
 
 ## Before you open a PR
 
 Run these and make sure they're clean:
 
 ```bash
-pnpm typecheck       # tsc, strict mode — must pass
-pnpm test            # run unit tests — must pass
-pnpm build           # must build
+npm run typecheck    # tsc, strict mode — must pass
+npm test -- --run    # run unit tests — must pass
+npm run build        # must build
 ```
 
 If your change touches the join engine, verify a real merge still works end to end

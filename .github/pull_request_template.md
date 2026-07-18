@@ -12,9 +12,9 @@
 
 ## Testing
 
-- [ ] Unit tests added/updated (`pnpm test`)
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm build` passes
+- [ ] Unit tests added/updated (`npm test`)
+- [ ] `npm run typecheck` passes
+- [ ] `npm run build` passes
 
 ## For UI changes
 

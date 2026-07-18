@@ -29,29 +29,70 @@ flags, no config, just a clean keyboard-driven flow from folder to finished file
 Optionally, add a **crossfade transition** between clips (press `t` on the arrange screen).
 It's off by default; enabling it re-encodes the output (transitions can't be done losslessly).
 
-Every joined file is written to the **`output/`** folder with a timestamped default
-name (`joined_output_YYYY-MM-DD_HHMMSS.mp4`), so repeated joins never overwrite one another.
+Every joined file is written to a fixed **ClipJoin** folder in your home —
+`~/Movies/ClipJoin` on macOS, `~/Videos/ClipJoin` on Linux/Windows — so `clipjoin`
+saves to the same predictable place no matter which directory you run it from. Files
+get a timestamped default name (`joined_output_YYYY-MM-DD_HHMMSS.mp4`), so repeated
+joins never overwrite one another. Point it elsewhere for a run with `--out`:
+
+```bash
+clipjoin --out ~/Desktop         # write joined videos to ~/Desktop instead
+```
+
+## Install
+
+Install globally with npm — you get a `clipjoin` command anywhere
+(`clip-join` works too, they're the same thing):
+
+```bash
+npm install -g clip-join   # then run: clipjoin
+npx clip-join              # or run once without installing
+```
+
+**ffmpeg is required** (it bundles `ffprobe`) — install it with your package
+manager if you don't have it:
+
+```bash
+brew install ffmpeg        # macOS
+sudo apt install ffmpeg    # Debian/Ubuntu
+```
+
+<details>
+<summary>Optional: one-line installer</summary>
+
+Prefer a single command that also checks Node + ffmpeg for you and fixes PATH?
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BrenoHA/clip-join/main/install.sh | bash
+```
+
+It just wraps `npm install -g clip-join` with a few pre-flight checks.
+
+</details>
 
 ## Requirements
 
 - **Node.js 18+**
-- **pnpm** (this project uses pnpm; the easiest way to get it is `corepack enable pnpm`)
 - **ffmpeg** (bundles `ffprobe`) on your `PATH`
 
+## Building from source
+
 ```bash
-brew install ffmpeg      # macOS; use your package manager elsewhere
-corepack enable pnpm     # if you don't already have pnpm
-pnpm install
-pnpm build
+git clone https://github.com/BrenoHA/clip-join.git
+cd clip-join
+npm install
+npm run build
 ```
 
 ## Usage
 
 ```bash
-pnpm dev                 # dev mode, no build step (via tsx)
-pnpm start               # after `pnpm build`
-pnpm start ~/clips       # jump straight into a folder
-```
+clipjoin                 # after installing globally
+clipjoin ~/clips         # jump straight into a folder
+
+npm run dev              # dev mode from source, no build step (via tsx)
+npm start                # from source, after `npm run build`
+npm start ~/clips        # jump straight into a folder
 
 Everything is keyboard-driven.
 
@@ -77,7 +118,7 @@ total duration, size, and whether the join will be lossless):
 | `↑ ↓`             | Move the cursor                               |
 | `space` / `Enter` | Toggle a clip in/out of the join              |
 | `Shift+↑ ↓`       | Reorder the selected clip                     |
-| `o`               | Rename the output file (saved into `output/`) |
+| `o`               | Rename the output file (saved to the ClipJoin folder) |
 | `t`               | Toggle the transition (None / Crossfade)      |
 | `j`               | **▶ Start the join**                          |
 | `esc`             | Back to the browser                           |
@@ -92,7 +133,7 @@ separate from it:
 
 ```
 src/
-  index.tsx            # CLI entry (bin: clip-join)
+  index.tsx            # CLI entry (bin: clipjoin / clip-join)
   config.ts            # extensions, output dir, default name, encode settings
   core/                # domain logic, no UI, unit-testable
     videos · probe · join · output · format · types
@@ -111,9 +152,9 @@ src/
 Unit tests cover core functionality and can be run without ffmpeg installed:
 
 ```bash
-pnpm test              # run all unit tests
-pnpm test --watch     # run tests in watch mode during development
-pnpm test --ui        # open test UI in browser
+npm test                # run all unit tests
+npm test -- --watch     # run tests in watch mode during development
+npm run test:ui         # open test UI in browser
 ```
 
 Tests use [Vitest](https://vitest.dev/) and cover formatting utilities, video sorting,
@@ -137,8 +178,8 @@ conventions, and the PR process.
   slightly different per-clip encoding perfectly. If playback looks off, the clips likely
   need re-encoding (ClipJoin falls back automatically when stream copy fails).
 - **Original files are never modified or deleted.**
-- Output names are always confined to `output/` (a path typed into the rename field is
-  reduced to its basename).
+- Output names are always confined to the output folder (a path typed into the rename
+  field is reduced to its basename); use `--out <dir>` to change the folder itself.
 
 ## License
 

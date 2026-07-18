@@ -1,3 +1,4 @@
+import os from "node:os";
 import path from "node:path";
 import type { Transition } from "./core/types.js";
 
@@ -16,8 +17,30 @@ export const TRANSITIONS: { id: Transition; label: string; xfade?: string }[] = 
   { id: "crossfade", label: "Crossfade", xfade: "fade" },
 ];
 
-/** Every joined video is written here, relative to where ClipJoin is launched. */
-export const OUTPUT_DIR = path.resolve(process.cwd(), "output");
+/**
+ * Default home for joined videos: a fixed, always-writable folder under the
+ * user's home so `clipjoin` behaves identically from any directory (rather than
+ * scattering `output/` folders wherever it happens to be launched).
+ *   macOS → ~/Movies/ClipJoin   ·   Linux/Windows → ~/Videos/ClipJoin
+ */
+export function defaultOutputDir(): string {
+  const parent = process.platform === "darwin" ? "Movies" : "Videos";
+  return path.join(os.homedir(), parent, "ClipJoin");
+}
+
+// The active output directory. Defaults per-platform; overridden at startup by
+// the `--out <dir>` flag via setOutputDir().
+let outputDir = defaultOutputDir();
+
+/** Absolute directory every joined video (and its chapters file) is written to. */
+export function getOutputDir(): string {
+  return outputDir;
+}
+
+/** Point output at a specific directory (from `--out`). Resolved to absolute. */
+export function setOutputDir(dir: string): void {
+  outputDir = path.resolve(dir);
+}
 
 export const REENCODE_CRF = 18;
 export const REENCODE_PRESET = "veryfast";

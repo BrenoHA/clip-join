@@ -28,7 +28,7 @@ What actually happened instead.
 
 - **OS**: (e.g., macOS 14.0, Ubuntu 22.04)
 - **Node version**: (output of `node --version`)
-- **pnpm version**: (output of `pnpm --version`)
+- **npm version**: (output of `npm --version`)
 - **ffmpeg version**: (output of `ffmpeg -version`)
 - **ClipJoin version/commit**: (if applicable)
 
