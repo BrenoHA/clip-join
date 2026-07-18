@@ -14,9 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: "https://registry.npmjs.org" # npmjs.com, not GitHub Packages
-      - run: npm install -g npm@latest # Trusted Publishing needs npm >= 11.5.1
+      - run: npm install -g npm@11 # Trusted Publishing needs npm >= 11.5.1 (pinned: npm@12 drops older Node)
       - run: npm ci
       - run: npm run typecheck
       - run: npm test -- --run
