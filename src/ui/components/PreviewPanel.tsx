@@ -12,6 +12,7 @@ interface Props {
   clips: Clip[];
   outputPath: string;
   transition: Transition;
+  chaptersEnabled: boolean;
   /** Filename being edited, or null when not editing. */
   editingValue: string | null;
   onChangeEditing: (value: string) => void;
@@ -22,6 +23,7 @@ export function PreviewPanel({
   clips,
   outputPath,
   transition,
+  chaptersEnabled,
   editingValue,
   onChangeEditing,
   onSubmitEditing,
@@ -57,6 +59,9 @@ export function PreviewPanel({
       <Text>💾 {humanSize(totalSize)}</Text>
       <Text color={hasTransition ? undefined : theme.muted}>
         {hasTransition ? "🎬 " : ""}Transition: {transitionLabel}
+      </Text>
+      <Text color={chaptersEnabled ? undefined : theme.muted}>
+        {chaptersEnabled ? "📄 " : ""}Chapters: {chaptersEnabled ? "ON" : "OFF"}
       </Text>
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.muted}>Output → {folder}/</Text>

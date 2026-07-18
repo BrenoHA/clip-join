@@ -44,6 +44,12 @@ export function SummaryScreen({ result, onAgain, onQuit }: Props) {
           <Text color={theme.muted}>Elapsed:  </Text>
           {(result.elapsedMs / 1000).toFixed(1)}s
         </Text>
+        {result.chaptersPath && (
+          <Text>
+            <Text color={theme.muted}>Chapters: </Text>
+            <Text color={theme.warn}>{result.chaptersPath}</Text>
+          </Text>
+        )}
       </Box>
 
       <KeyHints
