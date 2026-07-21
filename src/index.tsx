@@ -7,6 +7,21 @@ import { fileURLToPath } from "node:url";
 import { render } from "ink";
 import { App } from "./ui/App.js";
 import { setOutputDir } from "./config.js";
+import {
+  DEBUG_ENABLED,
+  LOG_PATH,
+  debugLog,
+  installGlobalErrorLogging,
+  installStdoutProfiler,
+  logEnvironment,
+} from "./debug.js";
+
+installGlobalErrorLogging();
+installStdoutProfiler();
+logEnvironment();
+if (DEBUG_ENABLED) {
+  console.error(`[clip-join debug] logging to ${LOG_PATH}`);
+}
 
 const argv = process.argv.slice(2);
 
@@ -43,5 +58,7 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
+debugLog(`render start, initialFolder=${folderArg ?? ""}`);
 const { waitUntilExit } = render(<App initialFolder={folderArg} />);
 await waitUntilExit();
+debugLog("waitUntilExit resolved");

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { REENCODE_CRF, REENCODE_PRESET, TRANSITION_DURATION_SEC, TRANSITIONS } from "../config.js";
 import { ensureOutputDir } from "./output.js";
+import { canLossless } from "./videos.js";
 import type { Clip, JoinMode, JoinProgress, JoinResult, Transition } from "./types.js";
 
 /**
@@ -190,7 +191,7 @@ export async function runJoin(opts: RunJoinOptions): Promise<JoinResult> {
   const concatFile = await buildConcatFile(included.map((c) => c.path));
 
   try {
-    if (!forceReencode) {
+    if (!forceReencode && canLossless(included)) {
       const args = ["-y", "-f", "concat", "-safe", "0", "-i", concatFile, "-c", "copy", output];
       onProgress?.({ fraction: 0, mode: "lossless" });
       const { code } = await runFfmpeg(args, totalDuration, "lossless", onProgress);
