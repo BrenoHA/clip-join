@@ -1,6 +1,6 @@
 {
   "name": "clip-join",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ClipJoin — an interactive terminal UI for joining videos into one file.",
   "type": "module",
   "license": "MIT",
