@@ -9,6 +9,7 @@ import { runJoin } from "../core/join.js";
 import { resolveOutputPath, writeChaptersFile } from "../core/output.js";
 import type { Clip, JoinMode, JoinResult, Transition } from "../core/types.js";
 import { useFullscreen } from "./hooks/useFullscreen.js";
+import { debugLog } from "../debug.js";
 import { theme } from "./theme.js";
 import { Header } from "./components/Header.js";
 import { SplashScreen } from "./screens/SplashScreen.js";
@@ -44,6 +45,16 @@ export function App({ initialFolder }: Props) {
   useFullscreen();
   const { exit } = useApp();
 
+  // Ink reference-counts raw mode across every active useInput and disables +
+  // unrefs stdin the instant that count hits zero (e.g. during "probing" and
+  // "joining", which have no screen-level useInput mounted). Toggling raw
+  // mode off and back on is a known Windows/libuv TTY quirk: the console read
+  // handle can come back not properly re-armed, so it silently stops emitting
+  // input forever — a hang, not a crash. Keeping one permanent listener alive
+  // for the app's whole lifetime means the count never drops to zero between
+  // screens, so raw mode is only ever toggled once, at real startup/exit.
+  useInput(() => {});
+
   const [phase, setPhase] = useState<Phase>("splash");
   const [deps, setDeps] = useState<DepStatus | null>(null);
   const [splashDone, setSplashDone] = useState(false);
@@ -65,6 +76,10 @@ export function App({ initialFolder }: Props) {
   useEffect(() => {
     void checkDeps().then(setDeps);
   }, []);
+
+  useEffect(() => {
+    debugLog(`phase -> ${phase} (clips=${clips.length})`);
+  }, [phase, clips.length]);
 
   // Route once the splash is done AND deps have resolved.
   useEffect(() => {

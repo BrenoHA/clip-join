@@ -8,6 +8,7 @@ import { TRANSITIONS } from "../../config.js";
 import { theme } from "../theme.js";
 import { PreviewPanel } from "../components/PreviewPanel.js";
 import { KeyHints } from "../components/KeyHints.js";
+import { debugLog } from "../../debug.js";
 
 interface Props {
   clips: Clip[];
@@ -52,6 +53,19 @@ export function EditScreen({
   };
 
   useInput((input, key) => {
+    const t0 = process.hrtime.bigint();
+    debugLog(
+      `key input=${JSON.stringify(input)} key=${JSON.stringify(key)} cursor=${cursor} clips=${clips.length}`
+    );
+    try {
+      handleInput(input, key);
+    } finally {
+      const ms = Number(process.hrtime.bigint() - t0) / 1_000_000;
+      if (ms >= 5) debugLog(`SLOW key handler took ${ms.toFixed(1)}ms`);
+    }
+  });
+
+  function handleInput(input: string, key: any) {
     if (editingOutput) return; // TextInput owns keystrokes while editing
 
     if (input === "q") return onQuit();
@@ -77,7 +91,7 @@ export function EditScreen({
       // j = Join. (Enter toggles the clip; it never starts the join.)
       if (clips.some((c) => c.included)) onJoin();
     }
-  });
+  }
 
   const included = clips.filter((c) => c.included);
   const transitionLabel = TRANSITIONS.find((t) => t.id === transition)?.label ?? "None";

@@ -38,10 +38,20 @@ export function sortClips(clips: Clip[], by: "date" | "name"): Clip[] {
   return copy;
 }
 
-/** True when every included clip shares one signature, so a stream copy can work. */
+// Codecs safe to stream-copy straight into an .mp4 that plays back out of the
+// box everywhere. Notably excludes HEVC/H.265 (the default on most modern
+// phones): a stream copy of it succeeds fine as far as ffmpeg is concerned,
+// but stock Windows has no HEVC decoder and refuses to open the result
+// ("Missing codec", 0xc00d5212) — so those sources must always be re-encoded
+// to H.264 instead of copied.
+const SAFE_COPY_CODECS = new Set(["h264"]);
+
+/** True when every included clip shares one signature that's also safe to stream-copy. */
 export function canLossless(clips: Clip[]): boolean {
   const included = clips.filter((c) => c.included);
   if (included.length === 0) return false;
   const first = included[0].videoSignature;
-  return included.every((c) => c.videoSignature === first);
+  if (!included.every((c) => c.videoSignature === first)) return false;
+  const codec = first.split(/[ _]/)[0]?.toLowerCase();
+  return SAFE_COPY_CODECS.has(codec);
 }
