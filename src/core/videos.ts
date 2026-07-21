@@ -38,12 +38,13 @@ export function sortClips(clips: Clip[], by: "date" | "name"): Clip[] {
   return copy;
 }
 
-// Codecs safe to stream-copy straight into an .mp4 that plays back out of the
-// box everywhere. Notably excludes HEVC/H.265 (the default on most modern
-// phones): a stream copy of it succeeds fine as far as ffmpeg is concerned,
-// but stock Windows has no HEVC decoder and refuses to open the result
-// ("Missing codec", 0xc00d5212) — so those sources must always be re-encoded
-// to H.264 instead of copied.
+// Codecs safe to stream-copy straight into an .mp4. H.264 plays everywhere.
+// HEVC/H.265 (the default on most modern phones) is safe to copy on platforms
+// with a system decoder (macOS, Linux) — the copy is instant and the result
+// plays fine there. It is NOT safe on stock Windows, which has no HEVC decoder
+// and refuses to open the copied file ("Missing codec", 0xc00d5212); there it
+// must be re-encoded to H.264 instead. So HEVC's copyability is host-dependent
+// (see canLossless), while H.264 is always allowed.
 const SAFE_COPY_CODECS = new Set(["h264"]);
 
 /** True when every included clip shares one signature that's also safe to stream-copy. */
@@ -53,5 +54,9 @@ export function canLossless(clips: Clip[]): boolean {
   const first = included[0].videoSignature;
   if (!included.every((c) => c.videoSignature === first)) return false;
   const codec = first.split(/[ _]/)[0]?.toLowerCase();
+  if (!codec) return false;
+  // HEVC copies fine anywhere with a system decoder, but stock Windows has none,
+  // so force a re-encode there and allow the fast copy on macOS/Linux.
+  if (codec === "hevc" || codec === "h265") return process.platform !== "win32";
   return SAFE_COPY_CODECS.has(codec);
 }

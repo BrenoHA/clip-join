@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { sortClips, canLossless } from './videos.js';
 import type { Clip } from './types.js';
 
@@ -186,6 +186,33 @@ describe('videos utilities', () => {
         },
       ];
       expect(canLossless(clips)).toBe(true);
+    });
+
+    describe('HEVC is host-dependent', () => {
+      const original = process.platform;
+      const setPlatform = (value: string) =>
+        Object.defineProperty(process, 'platform', { value, configurable: true });
+      afterEach(() => setPlatform(original));
+
+      const hevcClips = [
+        { ...baseClip, id: '1', videoSignature: 'hevc 1920x1080' },
+        { ...baseClip, id: '2', videoSignature: 'hevc 1920x1080' },
+      ];
+
+      it('allows a stream copy on macOS', () => {
+        setPlatform('darwin');
+        expect(canLossless(hevcClips)).toBe(true);
+      });
+
+      it('allows a stream copy on Linux', () => {
+        setPlatform('linux');
+        expect(canLossless(hevcClips)).toBe(true);
+      });
+
+      it('forces a re-encode on Windows', () => {
+        setPlatform('win32');
+        expect(canLossless(hevcClips)).toBe(false);
+      });
     });
   });
 });
