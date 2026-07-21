@@ -25,7 +25,27 @@ flags, no config, just a clean keyboard-driven flow from folder to finished file
 
 ## Install
 
-Install once with npm:
+ClipJoin needs two things on your machine first:
+
+- **[Node.js](https://nodejs.org) ≥ 18** — ships with `npm`, used to install and run ClipJoin.
+- **[ffmpeg](#ffmpeg-required)** on your `PATH` — does the actual merging.
+
+<details>
+<summary>Don't have Node yet?</summary>
+
+Install it from [nodejs.org](https://nodejs.org) (grab the LTS build) or with a package manager:
+
+```bash
+brew install node                      # macOS
+sudo apt install nodejs npm            # Debian / Ubuntu
+winget install OpenJS.NodeJS.LTS       # Windows  (or: choco install nodejs-lts)
+```
+
+Check it worked with `node --version` (should print v18 or higher).
+
+</details>
+
+Then install ClipJoin once with npm:
 
 ```bash
 npm install -g clip-join
