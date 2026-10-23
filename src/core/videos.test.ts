@@ -1,6 +1,22 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { sortClips, canLossless } from './videos.js';
+import { isImageFile } from '../config.js';
 import type { Clip } from './types.js';
+
+describe('isImageFile', () => {
+  it('accepts supported still formats, case-insensitively', () => {
+    expect(isImageFile('photo.jpg')).toBe(true);
+    expect(isImageFile('IMG_0001.JPEG')).toBe(true);
+    expect(isImageFile('face.png')).toBe(true);
+    expect(isImageFile('ANIMATED.GIF')).toBe(true);
+  });
+
+  it('rejects non-image files and extension-less names', () => {
+    expect(isImageFile('clip.mp4')).toBe(false);
+    expect(isImageFile('readme.txt')).toBe(false);
+    expect(isImageFile('noext')).toBe(false);
+  });
+});
 
 describe('videos utilities', () => {
   describe('sortClips', () => {
@@ -9,6 +25,7 @@ describe('videos utilities', () => {
         id: '3',
         path: '/videos/charlie.mp4',
         name: 'charlie',
+        kind: 'video',
         durationSec: 45,
         sizeBytes: 1000000,
         creationTime: new Date('2024-01-15'),
@@ -24,6 +41,7 @@ describe('videos utilities', () => {
         id: '1',
         path: '/videos/alice.mp4',
         name: 'alice',
+        kind: 'video',
         durationSec: 30,
         sizeBytes: 800000,
         creationTime: new Date('2024-01-10'),
@@ -39,6 +57,7 @@ describe('videos utilities', () => {
         id: '2',
         path: '/videos/bob.mp4',
         name: 'bob',
+        kind: 'video',
         durationSec: 60,
         sizeBytes: 1200000,
         creationTime: new Date('2024-01-12'),
@@ -104,6 +123,7 @@ describe('videos utilities', () => {
       id: '1',
       path: '/videos/video.mp4',
       name: 'video',
+      kind: 'video',
       durationSec: 60,
       sizeBytes: 1000000,
       creationTime: new Date(),
@@ -162,6 +182,22 @@ describe('videos utilities', () => {
 
     it('should return false for empty array', () => {
       expect(canLossless([])).toBe(false);
+    });
+
+    it('should return false when any included clip is an image', () => {
+      const clips: Clip[] = [
+        { ...baseClip, id: '1', kind: 'image', videoSignature: 'png 1920x1080' },
+        { ...baseClip, id: '2' },
+      ];
+      expect(canLossless(clips)).toBe(false);
+    });
+
+    it('should ignore images that are not included', () => {
+      const clips: Clip[] = [
+        { ...baseClip, id: '1' },
+        { ...baseClip, id: '2', kind: 'image', videoSignature: 'png 1920x1080', included: false },
+      ];
+      expect(canLossless(clips)).toBe(true);
     });
 
     it('should return true for single included clip', () => {

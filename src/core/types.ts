@@ -1,7 +1,11 @@
+export type ClipKind = "video" | "image";
+
 export interface Clip {
   id: string;
   path: string;
   name: string;
+  /** "video" for real clips, "image" for stills expanded to IMAGE_DURATION_SEC. */
+  kind: ClipKind;
   durationSec: number;
   sizeBytes: number;
   creationTime: Date;

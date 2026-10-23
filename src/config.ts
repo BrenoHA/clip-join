@@ -5,6 +5,31 @@ import type { Transition } from "./core/types.js";
 export const DEFAULT_EXTS = ["mp4", "mov", "m4v", "avi", "mkv"];
 
 /**
+ * Still-image formats accepted alongside video clips. Each image becomes a
+ * fixed-length segment (IMAGE_DURATION_SEC) inside the join. Animated GIFs are
+ * treated as stills (first frame only) — frame animation is a non-goal.
+ */
+export const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
+
+/** Everything the folder scanner accepts: real clips plus stills. */
+export const SCAN_EXTS = [...DEFAULT_EXTS, ...IMAGE_EXTS];
+
+/** How long each still image appears on screen, in seconds. */
+export const IMAGE_DURATION_SEC = 2;
+
+/**
+ * Input framerate for a looped image. Feeds the filtergraph's fps
+ * normalization whenever the first segment is a still.
+ */
+export const IMAGE_FPS = 30;
+
+/** True when a filename is a still image we support (case-insensitive). */
+export function isImageFile(name: string): boolean {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return IMAGE_EXTS.includes(ext);
+}
+
+/**
  * Overlap length for a transition, in seconds. ffmpeg's own xfade default is
  * 1.0s; we go shorter for a subtler blend. Auto-clamped down when a clip is
  * shorter than this (see core/join.ts).

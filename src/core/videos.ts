@@ -51,6 +51,9 @@ const SAFE_COPY_CODECS = new Set(["h264"]);
 export function canLossless(clips: Clip[]): boolean {
   const included = clips.filter((c) => c.included);
   if (included.length === 0) return false;
+  // Stills can't be stream-copied into a timeline of real clips; they always
+  // go through the (re-encoding) filtergraph path. See core/join.ts.
+  if (included.some((c) => c.kind === "image")) return false;
   const first = included[0].videoSignature;
   if (!included.every((c) => c.videoSignature === first)) return false;
   const codec = first.split(/[ _]/)[0]?.toLowerCase();
