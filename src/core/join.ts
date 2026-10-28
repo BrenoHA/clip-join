@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { REENCODE_CRF, REENCODE_PRESET, TRANSITION_DURATION_SEC, TRANSITIONS } from "../config.js";
+import { REENCODE_CRF, REENCODE_PRESET, TRANSITION_DURATION_SEC, TRANSITIONS, IMAGE_FPS } from "../config.js";
 import { ensureOutputDir } from "./output.js";
 import { canLossless } from "./videos.js";
 import type { Clip, JoinMode, JoinProgress, JoinResult, Transition } from "./types.js";
@@ -85,13 +85,25 @@ export function resolveTransitionDuration(clips: Clip[]): number {
 }
 
 /**
- * Build the ffmpeg args for a transition join: every clip is its own `-i`
- * input, blended with an xfade (video) / acrossfade (audio) filtergraph. This
- * always re-encodes. Pure/synchronous so it can be unit-tested without ffmpeg.
+ * Build the ffmpeg args for a join that runs through one filter_complex
+ * graph. Used both for the transition join (chained xfade/acrossfade) and —
+ * whenever any still image is part of the selection — for the plain
+ * butt-join, because the concat demuxer can't hold images.
  *
- * `d` is the per-boundary overlap in seconds (see resolveTransitionDuration).
+ * An image is fed as a `-loop 1 -t <duration>` input, so it becomes a
+ * fixed-length video stream; from there it's just another segment, which is
+ * why crossfades between photos and videos work unchanged.
+ *
+ * Audio: concat/acrossfade need one audio stream per segment, so segments
+ * without a real audio track (stills, audio-less videos) get synthesized
+ * silence via anullsrc. When no included clip has real audio, the output
+ * audio track is dropped entirely — a photo slideshow shouldn't carry a
+ * fake AAC track.
+ *
+ * Pure/synchronous so it can be unit-tested without ffmpeg.
+ * `d` is the per-boundary overlap in seconds (0 for a butt-join concat).
  */
-export function buildTransitionArgs(
+export function buildFiltergraphJoinArgs(
   clips: Clip[],
   output: string,
   transition: Transition,
@@ -99,61 +111,103 @@ export function buildTransitionArgs(
   enc: { crf: number; preset: string }
 ): { args: string[]; totalDuration: number } {
   const n = clips.length;
+  const chained = transition !== "none" && n >= 2;
   const xfade = TRANSITIONS.find((t) => t.id === transition)?.xfade ?? "fade";
-  const withAudio = clips.every((c) => c.hasAudio);
+  const withAudio = clips.some((c) => c.kind === "video" && c.hasAudio);
 
-  // Normalize to the first clip's geometry/framerate so every xfade pair matches.
+  // Normalize to the first clip's geometry/framerate so every segment matches
+  // — both the concat filter and xfade refuse mismatched stream parameters.
   const w = clips[0].width || 1920;
   const h = clips[0].height || 1080;
   const fps = clips[0].fps || 30;
 
   const parts: string[] = [];
+  const args: string[] = ["-y"];
 
-  // Video: normalize each input, then chain xfade across the boundaries.
+  // Inputs: videos as-is; stills looped into fixed-length streams. Every input
+  // is then normalized to one geometry/framerate for the segment chain.
   for (let i = 0; i < n; i++) {
+    const clip = clips[i];
+    if (clip.kind === "image") {
+      args.push(
+        "-loop", "1",
+        "-framerate", String(IMAGE_FPS),
+        "-t", clip.durationSec.toFixed(3),
+        "-i", clip.path
+      );
+    } else {
+      args.push("-i", clip.path);
+    }
     parts.push(
       `[${i}:v]fps=${fps},scale=${w}:${h}:force_original_aspect_ratio=decrease,` +
         `pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,settb=AVTB[v${i}]`
     );
   }
-  let vPrev = "v0";
-  let sumBefore = clips[0].durationSec;
-  for (let k = 1; k < n; k++) {
-    const out = k === n - 1 ? "vout" : `vx${k}`;
-    const offset = sumBefore - k * d;
-    parts.push(
-      `[${vPrev}][v${k}]xfade=transition=${xfade}:duration=${d}:offset=${offset.toFixed(3)}[${out}]`
+
+  /**
+   * Audio chain for segment i: its real audio, or anullsrc silence trimmed to
+   * the segment's length. Every segment needs one for concat / acrossfade.
+   */
+  const audioChain = (i: number): string => {
+    const clip = clips[i];
+    if (clip.kind === "video" && clip.hasAudio) {
+      return `[${i}:a]aresample=async=1,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}]`;
+    }
+    return (
+      `anullsrc=r=48000:cl=stereo,atrim=duration=${clip.durationSec.toFixed(3)},` +
+      `aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}]`
     );
-    vPrev = out;
-    sumBefore += clips[k].durationSec;
-  }
+  };
 
-  // Audio: crossfade the tail of each clip into the next (skipped if any clip
-  // has no audio track — acrossfade would fail).
-  if (withAudio) {
-    for (let i = 0; i < n; i++) {
-      parts.push(`[${i}:a]aresample=async=1,aformat=sample_fmts=fltp:channel_layouts=stereo[a${i}]`);
-    }
-    let aPrev = "a0";
+  if (chained) {
+    // Video: chain xfade across the boundaries.
+    let vPrev = "v0";
+    let sumBefore = clips[0].durationSec;
     for (let k = 1; k < n; k++) {
-      const out = k === n - 1 ? "aout" : `ax${k}`;
-      parts.push(`[${aPrev}][a${k}]acrossfade=d=${d}[${out}]`);
-      aPrev = out;
+      const out = k === n - 1 ? "vout" : `vx${k}`;
+      const offset = sumBefore - k * d;
+      parts.push(
+        `[${vPrev}][v${k}]xfade=transition=${xfade}:duration=${d}:offset=${offset.toFixed(3)}[${out}]`
+      );
+      vPrev = out;
+      sumBefore += clips[k].durationSec;
+    }
+
+    if (withAudio) {
+      // Audio: crossfade the tail of each segment into the next. Segments
+      // filled with synthesized silence participate like any other.
+      for (let i = 0; i < n; i++) parts.push(audioChain(i));
+      let aPrev = "a0";
+      for (let k = 1; k < n; k++) {
+        const out = k === n - 1 ? "aout" : `ax${k}`;
+        parts.push(`[${aPrev}][a${k}]acrossfade=d=${d}[${out}]`);
+        aPrev = out;
+      }
+    }
+  } else {
+    // Butt-join: one concat instance over all normalized segments.
+    if (withAudio) {
+      for (let i = 0; i < n; i++) parts.push(audioChain(i));
+      const ins = clips.map((_, i) => `[v${i}][a${i}]`).join("");
+      parts.push(`${ins}concat=n=${n}:v=1:a=1[vout][aout]`);
+    } else {
+      const ins = clips.map((_, i) => `[v${i}]`).join("");
+      parts.push(`${ins}concat=n=${n}:v=1:a=0[vout]`);
     }
   }
 
-  const args = ["-y"];
-  for (const c of clips) args.push("-i", c.path);
   args.push("-filter_complex", parts.join(";"));
   args.push("-map", "[vout]");
   if (withAudio) args.push("-map", "[aout]");
-  // Force 4:2:0 on the encoder: xfade's output format is flexible, so without
-  // this ffmpeg may up-convert to yuv444p, which QuickTime refuses to play.
+  // Force 4:2:0 on the encoder: the graph's output format is flexible, so
+  // without this ffmpeg may up-convert to yuv444p, which QuickTime refuses
+  // to play.
   args.push("-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", String(enc.crf), "-preset", enc.preset);
   if (withAudio) args.push("-c:a", "aac", "-b:a", "192k");
   args.push(output);
 
-  const totalDuration = clips.reduce((sum, c) => sum + c.durationSec, 0) - (n - 1) * d;
+  const sum = clips.reduce((acc, c) => acc + c.durationSec, 0);
+  const totalDuration = chained ? sum - (n - 1) * d : sum;
   return { args, totalDuration };
 }
 
@@ -173,11 +227,17 @@ export async function runJoin(opts: RunJoinOptions): Promise<JoinResult> {
   await ensureOutputDir();
   const started = Date.now();
 
-  // Transition path: filtergraph, always re-encodes. Needs at least two clips
-  // (a single clip has no boundary to blend), so fall through to concat otherwise.
-  if (transition !== "none" && included.length >= 2) {
-    const d = resolveTransitionDuration(included);
-    const { args, totalDuration } = buildTransitionArgs(included, output, transition, d, {
+  // Any still image forces the filtergraph path — the concat demuxer can't
+  // hold images, and stills can never stream-copy anyway. The transition
+  // join lives in the same graph (see buildFiltergraphJoinArgs).
+  const hasImages = included.some((c) => c.kind === "image");
+  const useGraph = hasImages || (transition !== "none" && included.length >= 2);
+  if (useGraph) {
+    const d =
+      transition !== "none" && included.length >= 2
+        ? resolveTransitionDuration(included)
+        : 0;
+    const { args, totalDuration } = buildFiltergraphJoinArgs(included, output, transition, d, {
       crf,
       preset,
     });

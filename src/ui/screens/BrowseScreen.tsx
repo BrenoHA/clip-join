@@ -3,7 +3,7 @@ import { Box, Text, useInput } from "ink";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { DEFAULT_EXTS } from "../../config.js";
+import { isImageFile, SCAN_EXTS } from "../../config.js";
 import { humanDate } from "../../core/format.js";
 import { theme } from "../theme.js";
 import { KeyHints } from "../components/KeyHints.js";
@@ -12,9 +12,11 @@ interface Entry {
   name: string;
   path: string;
   isDir: boolean;
-  isVideo: boolean;
+  /** Selectable media: a real video clip or a still image. */
+  isMedia: boolean;
+  isImage: boolean;
   selected: boolean;
-  /** Modified time — only fetched for video files (the selectable ones). */
+  /** Modified time — only fetched for media files (the selectable ones). */
   mtime: Date | null;
 }
 
@@ -24,14 +26,14 @@ interface Props {
   onQuit: () => void;
 }
 
-const VIDEO_EXTS = new Set(DEFAULT_EXTS);
+const MEDIA_EXTS = new Set(SCAN_EXTS);
 const VISIBLE = 12;
 /** Width of the name column so the Date Modified column lines up across rows. */
 const NAME_W = 30;
 
-function isVideoFile(name: string): boolean {
+function isMediaFile(name: string): boolean {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  return VIDEO_EXTS.has(ext);
+  return MEDIA_EXTS.has(ext);
 }
 
 export function BrowseScreen({ onConfirm, onQuit }: Props) {
@@ -49,11 +51,12 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
           .filter((d) => !d.name.startsWith("."))
           .map(async (d) => {
             const full = path.join(target, d.name);
-            const isVideo = d.isFile() && isVideoFile(d.name);
-            // Only selectable (video) files need a modified date, so skip the
+            const isImage = d.isFile() && isImageFile(d.name);
+            const isMedia = d.isFile() && isMediaFile(d.name);
+            // Only selectable (media) files need a modified date, so skip the
             // stat() for everything else and keep directory listings fast.
             let mtime: Date | null = null;
-            if (isVideo) {
+            if (isMedia) {
               mtime = await fs
                 .stat(full)
                 .then((s) => s.mtime)
@@ -63,7 +66,8 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
               name: d.name,
               path: full,
               isDir: d.isDirectory(),
-              isVideo,
+              isMedia,
+              isImage,
               selected: selected.has(full),
               mtime,
             };
@@ -88,7 +92,7 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const videoCountHere = entries.filter((e) => e.isVideo).length;
+  const mediaCountHere = entries.filter((e) => e.isMedia).length;
 
   useInput((input, key) => {
     if (input === "q") return onQuit();
@@ -102,7 +106,7 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
       if (!entry) return;
       if (entry.isDir) {
         void load(entry.path);
-      } else if (entry.isVideo) {
+      } else if (entry.isMedia) {
         setSelected((prev) => {
           const next = new Set(prev);
           if (next.has(entry.path)) next.delete(entry.path);
@@ -120,7 +124,7 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
     } else if (input === "~") {
       void load(os.homedir());
     } else if (input === "s") {
-      const all = entries.filter((e) => e.isVideo).map((e) => e.path);
+      const all = entries.filter((e) => e.isMedia).map((e) => e.path);
       if (all.length > 0) onConfirm(all);
     } else if (input === "c") {
       if (selected.size > 0) onConfirm([...selected]);
@@ -146,17 +150,17 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
           window.map((entry, i) => {
             const idx = start + i;
             const active = idx === cursor;
-            const icon = entry.isDir ? "📁" : entry.isVideo ? "🎬" : "  ";
-            const check = entry.isVideo ? (entry.selected ? "[x]" : "[ ]") : "   ";
+            const icon = entry.isDir ? "📁" : entry.isImage ? "🖼️" : "🎬";
+            const check = entry.isMedia ? (entry.selected ? "[x]" : "[ ]") : "   ";
             const label = `${entry.name}${entry.isDir ? "/" : ""}`;
-            // Video rows pad the name so their Date Modified column aligns;
+            // Media rows pad the name so their Date Modified column aligns;
             // other rows just show the (untruncated) name with no date.
-            const name = entry.isVideo
+            const name = entry.isMedia
               ? label.length > NAME_W
                 ? label.slice(0, NAME_W - 1) + "…"
                 : label.padEnd(NAME_W)
               : label;
-            const modified = entry.isVideo && entry.mtime ? `  ${humanDate(entry.mtime)}` : "";
+            const modified = entry.isMedia && entry.mtime ? `  ${humanDate(entry.mtime)}` : "";
             return (
               <Text key={entry.path} color={active ? theme.brand : undefined} inverse={active}>
                 {active ? "▸ " : "  "}
@@ -168,7 +172,7 @@ export function BrowseScreen({ onConfirm, onQuit }: Props) {
       </Box>
 
       <Text color={theme.muted}>
-        {videoCountHere} video(s) here · {selected.size} selected
+        {mediaCountHere} video(s)/image(s) here · {selected.size} selected
       </Text>
 
       <KeyHints

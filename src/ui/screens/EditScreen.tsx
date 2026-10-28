@@ -121,6 +121,7 @@ export function EditScreen({
               >
                 {active ? "▸" : " "} {num}. {clip.included ? "[x]" : "[ ]"}{" "}
                 {clip.name.padEnd(16).slice(0, 16)} {humanClock(clip.durationSec)}
+                {clip.kind === "image" ? " 🖼" : ""}
                 {" "}
                 {humanDate(clip.mtime)}
               </Text>

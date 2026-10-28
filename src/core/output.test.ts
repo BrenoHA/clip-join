@@ -92,6 +92,7 @@ describe('output utilities', () => {
         id: c.name,
         path: c.name,
         name: c.name,
+        kind: 'video' as const,
         durationSec: c.durationSec,
         sizeBytes: 0,
         creationTime: new Date(),
@@ -127,6 +128,7 @@ describe('output utilities', () => {
       const clips = [
         {
           name: 'GOPR0001.MP4', durationSec: 10, id: '1', path: 'GOPR0001.MP4',
+          kind: 'video' as const,
           sizeBytes: 0, creationTime: new Date(), mtime: new Date(),
           videoSignature: 'h264 1920x1080', width: 1920, height: 1080,
           fps: 30, hasAudio: true, included: true,

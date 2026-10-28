@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Clip } from "./types.js";
+import { IMAGE_DURATION_SEC, IMAGE_FPS, isImageFile } from "../config.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -92,19 +93,24 @@ async function probeOne(file: string): Promise<Clip> {
   ]);
   const v = videoStream(probe);
   const mtime = stat?.mtime ?? new Date(0);
+  // Stills probe the same way (ffprobe reports their dimensions) but they have
+  // no timeline of their own: they display for IMAGE_DURATION_SEC, run at
+  // IMAGE_FPS as looped inputs, and never carry audio.
+  const image = isImageFile(path.basename(abs));
   return {
     id: abs,
     path: abs,
     name: path.basename(abs),
-    durationSec: getDuration(probe),
+    kind: image ? "image" : "video",
+    durationSec: image ? IMAGE_DURATION_SEC : getDuration(probe),
     sizeBytes: stat?.size ?? 0,
     creationTime: creationTimeFrom(probe, mtime),
     mtime,
     videoSignature: videoSignature(probe),
     width: Number(v?.width) || 0,
     height: Number(v?.height) || 0,
-    fps: parseFps(v?.r_frame_rate),
-    hasAudio: hasAudioStream(probe),
+    fps: image ? IMAGE_FPS : parseFps(v?.r_frame_rate),
+    hasAudio: image ? false : hasAudioStream(probe),
     included: true,
   };
 }

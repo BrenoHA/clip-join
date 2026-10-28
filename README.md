@@ -119,6 +119,14 @@ clipjoin ~/clips --out ~/Desktop # start in ~/clips, save to ~/Desktop
 Optionally, add a **crossfade transition** between clips (press `t` on the arrange screen).
 It's off by default; enabling it re-encodes the output (transitions can't be done losslessly).
 
+### Still images work too
+
+Stills (`jpg`, `jpeg`, `png`, `webp`, `bmp`, `gif`) scan and arrange like videos, shown with a
+🖼 badge. Each image becomes a **2-second segment** in the timeline — mix photos between video
+clips or build a photo slideshow, and crossfades apply to them like any other clip. Because
+stills have no timeline of their own, any join containing an image re-encodes (no lossless
+shortcut), and photos carry silence where audio would be.
+
 ## Usage
 
 Everything is keyboard-driven.

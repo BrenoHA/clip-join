@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import Spinner from "ink-spinner";
 import path from "node:path";
-import { defaultOutputName } from "../config.js";
+import { defaultOutputName, SCAN_EXTS } from "../config.js";
 import { checkDeps, probeClips, type DepStatus } from "../core/probe.js";
 import { findVideos, sortClips } from "../core/videos.js";
 import { runJoin } from "../core/join.js";
@@ -88,7 +88,7 @@ export function App({ initialFolder }: Props) {
       setPhase("missingdeps");
     } else if (initialFolder) {
       void (async () => {
-        const files = await findVideos(path.resolve(initialFolder)).catch(() => []);
+        const files = await findVideos(path.resolve(initialFolder), SCAN_EXTS).catch(() => []);
         await beginProbe(files);
       })();
     } else {
@@ -99,7 +99,7 @@ export function App({ initialFolder }: Props) {
 
   async function beginProbe(files: string[]) {
     if (files.length === 0) {
-      setErrorMsg("No videos found in that folder.");
+      setErrorMsg("No videos or images found in that folder.");
       setPhase("error");
       return;
     }
